@@ -30,9 +30,6 @@ public class MouseLook : MonoBehaviour {
 
     public Vector3 lookingDir = new Vector3(0, 0, 0);
 
-	float rotationY = 0F;
-    float rotationX = 0F;
-
     Vector3 localTransfrom; 
     float localRotationX = 0F;
     float localRotationY = 0F;
