@@ -31,21 +31,22 @@ public class MouseLook : MonoBehaviour {
     public Vector3 lookingDir = new Vector3(0, 0, 0);
 
     Vector3 localTransfrom; 
-    float localRotationX = 0F;
-    float localRotationY = 0F;
+    float rotationX = 0F;
+    float rotationY = 0F;
 
 	void Update ()
 	{
 		if (axes == RotationAxes.MouseXAndY)
 		{
-            localRotationX = localTransfrom.y + Input.GetAxis("Mouse X") * sensitivityX;
-            localRotationX = Mathf.Clamp(localRotationX, lookingDir.y + minimumX, lookingDir.y + maximumX);
+            rotationX = localTransfrom.y + Input.GetAxis("Mouse X") * sensitivityX;
+            rotationX = Mathf.Clamp(rotationX, lookingDir.y + minimumX, lookingDir.y + maximumX);
+			
+			
+			rotationY = localTransfrom.x + Input.GetAxis("Mouse Y") * sensitivityY * -1;			
+            rotationY = Mathf.Clamp(rotationY, lookingDir.x + minimumY, lookingDir.x + maximumY);
 
-            localRotationY += Input.GetAxis("Mouse Y") * sensitivityY;
-            localRotationY = Mathf.Clamp(localRotationY, minimumY, maximumY);
-
-            localTransfrom = new Vector3(-localRotationY, localRotationX, 0);
-            transform.localEulerAngles = new Vector3(-localRotationY, localRotationX, 0);
+            localTransfrom = new Vector3(rotationY, rotationX, 0);
+            transform.localEulerAngles = new Vector3(rotationY, rotationX, 0);
 		}
 		else if (axes == RotationAxes.MouseX)
 		{
