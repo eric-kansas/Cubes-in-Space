@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
+Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 
 Project("{9A7883E8-9275-2C18-BD90-69290E5F3CBF}") = "Cubes-in-Space", "Assembly-CSharp-firstpass-vs.csproj", "{834C4B6E-920C-6E8E-435F-E70C33558AD8}"
