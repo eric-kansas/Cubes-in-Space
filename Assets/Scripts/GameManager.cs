@@ -4,7 +4,9 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour {
 
-    public int numberOfCubes = 1;
+    public float WorldSpace = 50f;
+
+    public int numberOfCubes = 10;
     public GameObject GrandCube;
     private List<GameObject> cubeList;
 
@@ -27,8 +29,13 @@ public class GameManager : MonoBehaviour {
     {
         for (int i = 0; i < numberOfCubes; i++)
         {
-            Debug.Log("adding cube " + i);
-            Instantiate(GrandCube, Vector3.zero, Quaternion.identity);
+            Vector3 randPos = new Vector3(
+                                          -WorldSpace + (Random.value * (WorldSpace*2f)),
+                                          -WorldSpace + (Random.value * (WorldSpace*2f)),
+                                          -WorldSpace + (Random.value * (WorldSpace*2f))
+                                          );
+
+            Instantiate(GrandCube, randPos, Quaternion.identity);
         }
     }
 }
