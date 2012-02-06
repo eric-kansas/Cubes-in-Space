@@ -4,8 +4,11 @@ using System.Collections;
 public class Launch : MonoBehaviour {
 
     private Vector3 targetPosition;
+	private GameObject targetObjectSide;
     private Vector3 normal;
     public GameObject player;
+	public Color color;
+	
 	
 	private bool isFlying = false;
 	
@@ -37,6 +40,9 @@ public class Launch : MonoBehaviour {
             //our target is where we clicked
             targetPosition = hit.point;
             normal = hit.normal;
+			targetObjectSide = hit.transform.gameObject; //the side of the cube we hit
+			
+			
 			isFlying = true;
 			
             //*********SEND DATA ABOUT CLICK***********//	
@@ -64,6 +70,15 @@ public class Launch : MonoBehaviour {
 			}
 			else
 			{
+				//we've hit, color the cube our color
+				if (targetObjectSide.name != "arena")
+				{
+					GameObject cube = targetObjectSide.transform.parent.gameObject;
+					Debug.Log("Launch Click-   We have hit cube " + cube.name);
+					Cube theCube = cube.GetComponent<Cube>();
+					
+					theCube.setSideColor(targetObjectSide, color);
+				}
 				//upon arrival, turn around
 				player.transform.position = targetPosition;
 				

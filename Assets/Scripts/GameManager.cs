@@ -5,14 +5,18 @@ using System.Collections.Generic;
 public class GameManager : MonoBehaviour {
 
     public float WorldSpace = 50f;
-
     public int numberOfCubes = 10;
     public GameObject GrandCube;
+	
+	
+	
     private List<GameObject> cubeList;
 
 	// Use this for initialization
 	void Start () {
-
+		cubeList = new List<GameObject>();
+		
+		
         if (GrandCube)
             BuildCubes();
         else
@@ -34,8 +38,12 @@ public class GameManager : MonoBehaviour {
                                           -WorldSpace + (Random.value * (WorldSpace*2f)),
                                           -WorldSpace + (Random.value * (WorldSpace*2f))
                                           );
-
-            Instantiate(GrandCube, randPos, Quaternion.identity);
+			//Instantiate(GrandCube, randPos, Quaternion.identity);
+			
+			//add the newly created cube to the cubeList
+			cubeList.Add((GameObject) Instantiate(GrandCube, randPos, Quaternion.identity));
         }
     }
+	
+	
 }
