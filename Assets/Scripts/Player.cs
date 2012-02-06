@@ -1,13 +1,15 @@
 using UnityEngine;
 using System.Collections;
 
-public class Launch : MonoBehaviour {
+public class Player : MonoBehaviour {
 
     private Vector3 targetPosition;
 	private GameObject targetObjectSide;
     private Vector3 normal;
     public GameObject player;
 	public Color color;
+
+    public GUIText guiText;
 	
 	
 	private bool isFlying = false;
@@ -30,19 +32,38 @@ public class Launch : MonoBehaviour {
 
         // variable for the raycast info
         RaycastHit hit;
+        bool didHit = false;
+
+        
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
+        {
+            Debug.Log("mouse: " + Input.mousePosition);
+
+            Vector3 distanceVector = hit.point - player.transform.position;
+            float distance = distanceVector.magnitude;
+            GameObject targetObject = hit.transform.gameObject; //the side of the cube we hit
+
+            if (targetObject.name != "arena")
+            {
+                Debug.Log(color.ToString());
+                guiText.material.color = new Color(color.r, color.g, color.b);
+                guiText.text = "Distance: " + Mathf.Round(distance);
+            }
+            else
+            {
+                guiText.material.color = new Color(255, 255, 255);
+                guiText.text = "Distance: " + Mathf.Round(distance);
+            }
+            didHit = true;
+        }
 
         //check for click on plane
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && didHit)
         {
-            if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
-                return;
-
             //our target is where we clicked
             targetPosition = hit.point;
             normal = hit.normal;
-			targetObjectSide = hit.transform.gameObject; //the side of the cube we hit
-			
-			
+            targetObjectSide = hit.transform.gameObject; //the side of the cube we hit
 			isFlying = true;
 			
             //*********SEND DATA ABOUT CLICK***********//	
@@ -60,7 +81,6 @@ public class Launch : MonoBehaviour {
 			//calculate the distance to target
 			Vector3 distanceVector = targetPosition - player.transform.position;
 			float distance = distanceVector.magnitude;
-			Debug.Log("Launch Click-  Distance to target: " + distance);
 			
 			if (distance >= 5)
 			{
@@ -74,7 +94,6 @@ public class Launch : MonoBehaviour {
 				if (targetObjectSide.name != "arena")
 				{
 					GameObject cube = targetObjectSide.transform.parent.gameObject;
-					Debug.Log("Launch Click-   We have hit cube " + cube.name);
 					Cube theCube = cube.GetComponent<Cube>();
 					
 					theCube.setSideColor(targetObjectSide, color);

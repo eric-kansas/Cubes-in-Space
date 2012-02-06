@@ -29,6 +29,7 @@ public class MouseLook : MonoBehaviour {
 	public float maximumY = 20F;
 
     public Vector3 lookingDir = new Vector3(0, 0, 0);
+    public Vector3 lookingDirV = new Vector3(0, 0, 0);
 
     Vector3 localTransfrom; 
     float rotationX = 0F;
@@ -38,6 +39,11 @@ public class MouseLook : MonoBehaviour {
 	{
 		if (axes == RotationAxes.MouseXAndY)
 		{
+            // Use the dot product between LookingDir as a vector to the 3 axes to determine which one we are looking down
+
+
+
+            
             rotationX = localTransfrom.y + Input.GetAxis("Mouse X") * sensitivityX;
             rotationX = Mathf.Clamp(rotationX, lookingDir.y + minimumX, lookingDir.y + maximumX);
 			
@@ -67,6 +73,7 @@ public class MouseLook : MonoBehaviour {
         localTransfrom = transform.localEulerAngles;
 
         lookingDir = transform.localEulerAngles;
+        lookingDirV = transform.forward;
 		// Make the rigid body not change rotation
 		if (rigidbody)
 			rigidbody.freezeRotation = true;

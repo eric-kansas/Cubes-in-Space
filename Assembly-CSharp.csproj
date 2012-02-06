@@ -18,7 +18,7 @@
 	<DebugType>full</DebugType>
 	<Optimize>false</Optimize>
 	<OutputPath>Temp\bin\Debug\</OutputPath>
-	<DefineConstants>DEBUG;TRACE;UNITY_3_4_2;UNITY_3_4;UNITY_EDITOR;ENABLE_PROFILER;UNITY_STANDALONE_WIN;ENABLE_GENERICS;ENABLE_DUCK_TYPING;ENABLE_TERRAIN;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_CLOTH;ENABLE_WWW</DefineConstants>
+	<DefineConstants>DEBUG;TRACE;UNITY_3_4_2;UNITY_3_4;UNITY_EDITOR;ENABLE_PROFILER;UNITY_WEBPLAYER;ENABLE_GENERICS;ENABLE_DUCK_TYPING;ENABLE_TERRAIN;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_CLOTH;ENABLE_WWW</DefineConstants>
 	<ErrorReport>prompt</ErrorReport>
 	<WarningLevel>4</WarningLevel>
 	<NoWarn>0169</NoWarn>
@@ -47,11 +47,12 @@
      <Compile Include="Assets\Scripts\Avatar.cs" />
      <Compile Include="Assets\Scripts\Cube.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
-     <Compile Include="Assets\Scripts\Launch.cs" />
      <Compile Include="Assets\Scripts\Lobby.cs" />
+     <Compile Include="Assets\Scripts\MouseLook.cs" />
      <Compile Include="Assets\Scripts\NetworkTransform.cs" />
      <Compile Include="Assets\Scripts\NetworkTransformReceiver.cs" />
      <Compile Include="Assets\Scripts\NetworkTransformSender.cs" />
+     <Compile Include="Assets\Scripts\Player.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
      <None Include="Assets\Standard Assets\Skyboxes\skybox info.txt" />
  <Reference Include="SmartFox2">
