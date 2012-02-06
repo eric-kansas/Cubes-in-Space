@@ -6,6 +6,13 @@ public class Launch : MonoBehaviour {
     private Vector3 targetPosition;
     private Vector3 normal;
     public GameObject player;
+	
+	private bool isFlying = false;
+	
+	
+	//movement variables
+	private float moveSpeed = .75f;
+	private Vector3 startPos;
 
     private MouseLook mouseLook;
 
@@ -24,19 +31,14 @@ public class Launch : MonoBehaviour {
         //check for click on plane
         if (Input.GetMouseButtonDown(0))
         {
-            if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 100))
+            if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
                 return;
 
             //our target is where we clicked
             targetPosition = hit.point;
             normal = hit.normal;
-            player.transform.position = targetPosition;
-            player.transform.forward = normal;
-
-            mouseLook.lookingDir = transform.localEulerAngles;
-            //Camera.main.ScreenPointToRay(-normal);
-            Debug.Log("normal: " + hit.normal);
-
+			isFlying = true;
+			
             //*********SEND DATA ABOUT CLICK***********//	
             //SFSObject myData = new SFSObject();		//create an object for sending data
 
@@ -46,6 +48,32 @@ public class Launch : MonoBehaviour {
             // then use the Send command with the smartFox object 
             // smartFox.Send(...);
         }
-
+		
+		if(isFlying){
+			
+			//calculate the distance to target
+			Vector3 distanceVector = targetPosition - player.transform.position;
+			float distance = distanceVector.magnitude;
+			Debug.Log("Launch Click-  Distance to target: " + distance);
+			
+			if (distance >= 5)
+			{
+				//move towards the target slowly
+				player.transform.position += (distanceVector.normalized * moveSpeed);
+				//player.transform.position = Vector3.Lerp(player.transform.position, targetPosition, Time.deltaTime * moveSpeed);
+			}
+			else
+			{
+				//upon arrival, turn around
+				player.transform.position = targetPosition;
+				
+				//slow these down somehow
+				player.transform.forward = normal; 
+				mouseLook.lookingDir = transform.localEulerAngles;
+				isFlying = false;
+	            //Camera.main.ScreenPointToRay(-normal);
+	            //Debug.Log("normal: " + hit.normal);
+			}
+		}
     }
 }
