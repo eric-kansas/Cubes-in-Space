@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -21,6 +22,14 @@ public class GameManager : MonoBehaviour {
     public int numberOfCubes = 10;
     public GameObject GrandCube;
     private List<GameObject> cubeList;
+
+    private Dictionary<string, GameObject> otherClients;
+    private List<Color> colors;
+    private List<Vector3> positions;
+
+    private GameObject myAvatar;
+    public GameObject avatarPF;
+    public GameObject characterPF;
 
     private string clientName;
     public string ClientName
@@ -80,17 +89,90 @@ public class GameManager : MonoBehaviour {
         currentRoom = smartFox.LastJoinedRoom;
         clientName = smartFox.MySelf.Name;
 
-        // set up arrays of colors and spawn positions for various players
+        // set up arrays of colors 
+        colors = new List<Color>() { new Color(0.6f, 0.3f, 0.1f), Color.red, Color.yellow, new Color(0.5f, 0.1f, 0.7f), Color.blue };
 
+        // set up arrays of positions 
+        positions = new List<Vector3>();
+        for (int i = 0; i < 5; i++)
+        {
+            positions.Add(new Vector3(0, 0, i * 15));
+        }
+        
+        otherClients = new Dictionary<string, GameObject>();
 
         // create my avatar
-
+        MakeCharacter(smartFox.MySelf);
 
         //start sending transform data
         //NetworkTransformSender tfSender = myAvatar.GetComponent<NetworkTransformSender>();
         //tfSender.StartSendTransform();
 
         SetupListeners();
+    }
+
+    void MakeCharacter(User user)
+    {
+        int whichColor = GetColorNumber(user);
+        if (whichColor == -1)
+            Debug.Log("-1 fault in color picker");
+
+        GameObject cha;
+        if (user.IsItMe)
+        {
+            cha = Instantiate(characterPF, positions[whichColor], Quaternion.identity) as GameObject;
+            myAvatar = cha;
+        }
+        else
+        {
+            cha = Instantiate(avatarPF, positions[whichColor], Quaternion.identity) as GameObject;
+            otherClients.Add(user.Name, cha);
+        }
+
+        Character ch = cha.GetComponent<Character>();
+        ch.BodyColor = colors[whichColor];
+        ch.IsMe = user.IsItMe;
+        ch.SmartFoxUser = user;
+    }
+
+    private int GetColorNumber(User user)
+    {
+        int colorNum = -1;
+
+        if (user.IsItMe)
+        {
+
+            //assign a new color
+            //first get a copy of available numbers, which is a room variable
+            SFSArray numbers = (SFSArray)currentRoom.GetVariable("colorNums").GetSFSArrayValue();
+            int ran = UnityEngine.Random.Range(0, numbers.Size() - 1);
+            colorNum = numbers.GetInt(ran);
+
+            //update room variable 
+            numbers.RemoveElementAt(ran);
+            //send back to store on server
+            List<RoomVariable> rData = new List<RoomVariable>();
+            rData.Add(new SFSRoomVariable("colorNums", numbers));
+            smartFox.Send(new SetRoomVariablesRequest(rData));
+
+            //store my own color on server as user data
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("colorIndex", colorNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
+
+        }
+        else
+        {
+            try
+            {
+                colorNum = (int)user.GetVariable("colorIndex").GetIntValue();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("error in else of getColorNumber " + ex.ToString());
+            }
+        }
+        return colorNum;
     }
 
     void SetupListeners()
@@ -112,8 +194,8 @@ public class GameManager : MonoBehaviour {
     {
         User user = (User)evt.Params["user"];
         Debug.Log("user entered room " + user.Name);
-        //NetworkTransformSender sender = myAvatar.GetComponent<NetworkTransformSender> ();
-        //sender.SendTransformOnRequest ();
+        //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
+        //sender.SendLaunchOnRequest();
     }
 
     private void OnUserLeaveRoom(BaseEvent evt)
@@ -175,22 +257,27 @@ public class GameManager : MonoBehaviour {
 
         User sender = (User)evt.Params["sender"];
 
-        /*if (!others.ContainsKey (sender.Name)){
+        //if we don't have this client in our client list add them 
+        if (!otherClients.ContainsKey (sender.Name)){
             Debug.Log ("making " + sender.Name);
-            MakeCharacter (sender);
+           // MakeCharacter (sender);
         }
-        ISFSObject obj = (SFSObject)evt.Params["message"];
-        NetworkTransform ntransform = NetworkTransform.FromSFSObject (obj);
-        NetworkTransformReceiver rec = others[sender.Name].GetComponent<NetworkTransformReceiver> ();
-        rec.ReceiveTransform (ntransform);
-         */
+
+        ISFSObject data = (SFSObject)evt.Params["message"];
+
+        if (data.ContainsKey("launchMessage"))
+        {
+            LaunchPacket launchMessage = LaunchPacket.FromSFSObject(data);
+            NetworkLaunchMessageReceiver rec = otherClients[sender.Name].GetComponent<NetworkLaunchMessageReceiver>();
+            rec.ReceiveLaunchData(launchMessage);
+        }         
     }
 
-    public void SendTransform(NetworkTransform ntransform)
+    public void SendLaunchMessage(LaunchPacket launchMessage)
     {
         ISFSObject data = new SFSObject();
-        //ntransform.ToSFSObject(data);
-        //smartFox.Send(new ObjectMessageRequest(data));
+        launchMessage.ToSFSObject(data);
+        smartFox.Send(new ObjectMessageRequest(data));
     }
 
     private void BuildCubes()
@@ -198,9 +285,9 @@ public class GameManager : MonoBehaviour {
         for (int i = 0; i < numberOfCubes; i++)
         {
             Vector3 randPos = new Vector3(
-                                          -WorldSpace + (Random.value * (WorldSpace*2f)),
-                                          -WorldSpace + (Random.value * (WorldSpace*2f)),
-                                          -WorldSpace + (Random.value * (WorldSpace*2f))
+                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace*2f)),
+                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f)),
+                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f))
                                           );
 			//Instantiate(GrandCube, randPos, Quaternion.identity);
 			

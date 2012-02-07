@@ -1,6 +1,14 @@
 using UnityEngine;
 using System.Collections;
 
+using Sfs2X;
+using Sfs2X.Core;
+using Sfs2X.Entities;
+using Sfs2X.Entities.Data;
+using Sfs2X.Entities.Variables;
+using Sfs2X.Requests;
+using Sfs2X.Exceptions;
+
 public class Player : MonoBehaviour {
 
     private Vector3 targetPosition;
@@ -10,7 +18,6 @@ public class Player : MonoBehaviour {
 	public Color color;
 
     public GUIText guiText;
-	
 	
 	private bool isFlying = false;
 	
@@ -23,6 +30,7 @@ public class Player : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
         mouseLook = this.GetComponent<MouseLook>();
 	}
 
@@ -37,15 +45,12 @@ public class Player : MonoBehaviour {
         
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
         {
-            Debug.Log("mouse: " + Input.mousePosition);
-
             Vector3 distanceVector = hit.point - player.transform.position;
             float distance = distanceVector.magnitude;
             GameObject targetObject = hit.transform.gameObject; //the side of the cube we hit
 
             if (targetObject.name != "arena")
             {
-                Debug.Log(color.ToString());
                 guiText.material.color = new Color(color.r, color.g, color.b);
                 guiText.text = "Distance: " + Mathf.Round(distance);
             }
@@ -67,13 +72,9 @@ public class Player : MonoBehaviour {
 			isFlying = true;
 			
             //*********SEND DATA ABOUT CLICK***********//	
-            //SFSObject myData = new SFSObject();		//create an object for sending data
-
-            // data goes into the myData object
-            // put x and z in the object, with string keys "x", "z"
-
-            // then use the Send command with the smartFox object 
-            // smartFox.Send(...);
+            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, 60.0f, 0.30f);
+            NetworkLaunchMessageSender sender = player.GetComponent<NetworkLaunchMessageSender>();
+            sender.SendLaunchOnRequest(launchMessage);
         }
 		
 		if(isFlying){
