@@ -31,6 +31,8 @@ public class GameManager : MonoBehaviour {
     public GameObject avatarPF;
     public GameObject characterPF;
 
+    public int myLatency;
+
     private string clientName;
     public string ClientName
     {
@@ -86,6 +88,7 @@ public class GameManager : MonoBehaviour {
             smartFox = new SmartFox(debug);
         }
 
+        smartFox.enableLagMonitor(true);
         currentRoom = smartFox.LastJoinedRoom;
         clientName = smartFox.MySelf.Name;
 
@@ -187,6 +190,7 @@ public class GameManager : MonoBehaviour {
         smartFox.AddEventListener(SFSEvent.OBJECT_MESSAGE, OnObjectMessageReceived);
         smartFox.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, OnUserVariablesUpdate);
         smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
+        smartFox.AddEventListener(SFSEvent.PING_PONG, OnPingPong);
     }
 
     // when user enters room, we send our transform so they can update us
@@ -249,6 +253,7 @@ public class GameManager : MonoBehaviour {
     {
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
+
     }
 
     //only message received currently is transform - refactor when this changes
@@ -273,6 +278,14 @@ public class GameManager : MonoBehaviour {
         }         
     }
 
+    // when user enters room, we send our transform so they can update us
+    public void OnPingPong(BaseEvent evt)
+    {
+        myLatency = (int)evt.Params["lagValue"];
+        //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
+        //sender.SendLaunchOnRequest();
+    }
+
     public void SendLaunchMessage(LaunchPacket launchMessage)
     {
         ISFSObject data = new SFSObject();
@@ -295,6 +308,4 @@ public class GameManager : MonoBehaviour {
 			cubeList.Add((GameObject) Instantiate(GrandCube, randPos, Quaternion.identity));
         }
     }
-	
-	
 }

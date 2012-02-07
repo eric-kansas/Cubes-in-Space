@@ -164,10 +164,14 @@ public class Lobby : MonoBehaviour {
 		Debug.Log("joined "+room.Name);
 		if(room.Name=="The Lobby" )
 			Application.LoadLevel(room.Name);
-		else {
-			Application.LoadLevel("testScene");
-			//smartFox.Send(new SpectatorToPlayerRequest());
-		}
+        else if (room.IsGame)
+        {
+            Application.LoadLevel("testScene");
+        }else
+        {
+            Application.LoadLevel("Game Lobby");
+            //smartFox.Send(new SpectatorToPlayerRequest());
+        }
 	}
 	
 	public void OnUserEnterRoom(BaseEvent evt) {
@@ -311,23 +315,19 @@ public class Lobby : MonoBehaviour {
 			// Game Room button
 			if (currentActiveRoom.Name == "The Lobby"){
 				if (GUI.Button (new Rect (80, 110, 85, 24), "Make Game")) {		
+
 					// ****** Create new room ******* //
-					Debug.Log("new room "+username + "'s Room");
+					
 					
 					//let smartfox take care of error if duplicate name
 					RoomSettings settings = new RoomSettings(username + "'s Room");
 					// how many players allowed
-					settings.MaxUsers = 5;	
-					settings.IsGame = true;
+					settings.MaxUsers = 5;
+                    //settings.GroupId = "create";
+					//settings.IsGame = true;
 					
-					//store indices into color arrays for setting user colors, delete as used
-					SFSArray nums = new SFSArray();
-					for(int i=0; i<5;i++){
-						nums.AddInt(i);
-					}
-					SFSRoomVariable colorNums = new SFSRoomVariable("colorNums", nums);
-					settings.Variables.Add(colorNums);
 					smartFox.Send(new CreateRoomRequest(settings));
+                    Debug.Log("new room " + username + "'s Room");
 				}
 			}
 		GUILayout.EndArea();
