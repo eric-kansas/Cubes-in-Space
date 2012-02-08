@@ -10,15 +10,15 @@ public class LaunchPacket
     private string type = "LAUNCH";
     private Vector3 launchPosition; // Position as Vector3
     private Vector3 launchDestination; // Position as Vector3
-    private float localGameTime; //current game time that event happened
-    private float localLatency; //my average latency to the server at that time 
+    private double localGameTime; //current game time that event happened
+    private double localLatency; //my average latency to the server at that time 
 
     public LaunchPacket()
     {
 
     }
 
-    public LaunchPacket( Vector3 pos, Vector3 destination, float gameTime, float latency)
+    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double latency)
     {
 
         // Launch Position
@@ -99,10 +99,10 @@ public class LaunchPacket
         launchMessage.PutFloat("ez", this.launchDestination.z);
 
         //Local Game Time
-        launchMessage.PutFloat("localGameTime", this.localGameTime);
+        launchMessage.PutDouble("localGameTime", this.localGameTime);
 
         //Local Latency
-        launchMessage.PutFloat("localLatency", this.localLatency);
+        launchMessage.PutDouble("localLatency", this.localLatency);
 
         data.PutSFSObject("launchMessage", launchMessage);
     }
@@ -133,10 +133,10 @@ public class LaunchPacket
         launchMessage.launchPosition = new Vector3(ex, ey, ez);
 
         //get & set senders local game time
-        launchMessage.localGameTime = launchData.GetFloat("localGameTime");
+        launchMessage.localGameTime = launchData.GetDouble("localGameTime");
 
         //get & set senders latency
-        launchMessage.localLatency = launchData.GetFloat("localLatency");
+        launchMessage.localLatency = launchData.GetDouble("localLatency");
 
         return launchMessage;
 	}
@@ -185,7 +185,7 @@ public class LaunchPacket
         }
     }
 
-    public float LocalGameTime
+    public double LocalGameTime
     {
         get
         {
@@ -193,7 +193,7 @@ public class LaunchPacket
         }
     }
 
-    public float LocalLatency
+    public double LocalLatency
     {
         get
         {

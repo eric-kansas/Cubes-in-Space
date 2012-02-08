@@ -239,6 +239,7 @@ public class GameLobby : MonoBehaviour
             RoomSettings settings = new RoomSettings(gameName);
             // how many players allowed
             settings.MaxUsers = 8;
+            settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
             //settings.GroupId = "create";
             settings.IsGame = true;
 

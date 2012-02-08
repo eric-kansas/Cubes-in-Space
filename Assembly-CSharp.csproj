@@ -56,6 +56,7 @@
      <Compile Include="Assets\Scripts\NetworkLaunchMessageSender.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
+     <Compile Include="Assets\Scripts\TimeManager.cs" />
      <None Include="Assets\Standard Assets\Skyboxes\skybox info.txt" />
  <Reference Include="SmartFox2">
  <HintPath>Assets\Plugins\SmartFox2.dll</HintPath>

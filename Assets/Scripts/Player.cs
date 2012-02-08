@@ -72,7 +72,7 @@ public class Player : MonoBehaviour {
 			isFlying = true;
 			
             //*********SEND DATA ABOUT CLICK***********//	
-            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, 60.0f, GameManager.Instance.myLatency);
+            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, TimeManager.Instance.AveragePing);
             NetworkLaunchMessageSender sender = player.GetComponent<NetworkLaunchMessageSender>();
             sender.SendLaunchOnRequest(launchMessage);
         }

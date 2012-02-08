@@ -13,6 +13,9 @@ using Sfs2X.Exceptions;
 
 public class GameManager : MonoBehaviour {
 
+    public readonly static string ExtName = "sfsFps";
+    public readonly static string ExtClass = "dk.fullcontrol.fps.FpsExtension";
+
     private SmartFox smartFox;
     private Lobby lobby;
     private Room currentRoom;
@@ -54,6 +57,8 @@ public class GameManager : MonoBehaviour {
 	void Start () {
 
         SetupTheFox();
+
+        TimeManager.Instance.Init();
         
         cubeList = new List<GameObject>();
 				
@@ -112,6 +117,12 @@ public class GameManager : MonoBehaviour {
         //tfSender.StartSendTransform();
 
         SetupListeners();
+    }
+
+    public void TimeSyncRequest()
+    {
+        ExtensionRequest request = new ExtensionRequest("getTime", new SFSObject(), currentRoom);
+        smartFox.Send(request);
     }
 
     void MakeCharacter(User user)
@@ -190,7 +201,34 @@ public class GameManager : MonoBehaviour {
         smartFox.AddEventListener(SFSEvent.OBJECT_MESSAGE, OnObjectMessageReceived);
         smartFox.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, OnUserVariablesUpdate);
         smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
-        smartFox.AddEventListener(SFSEvent.PING_PONG, OnPingPong);
+        smartFox.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
+        //smartFox.AddEventListener(SFSEvent.PING_PONG, OnPingPong);
+    }
+
+    private void OnExtensionResponse(BaseEvent evt)
+    {
+        try
+        {
+            Debug.Log("extension:");
+            string cmd = (string)evt.Params["cmd"];
+            ISFSObject dt = (SFSObject)evt.Params["params"];
+            if (cmd == "time")
+            {
+                HandleServerTime(dt);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Exception handling response: " + e.Message + " >>> " + e.StackTrace);
+        }
+
+    }
+
+    private void HandleServerTime(ISFSObject dt)
+    {
+        Debug.Log("server time");
+        long time = dt.GetLong("t");
+        TimeManager.Instance.Synchronize(Convert.ToDouble(time));
     }
 
     // when user enters room, we send our transform so they can update us
