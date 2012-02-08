@@ -13,8 +13,8 @@ public class Player : MonoBehaviour {
 
     private Vector3 targetPosition;
 	private GameObject targetObjectSide;
+	private NetworkLaunchMessageSender sender;
     private Vector3 normal;
-    public GameObject player;
 	public Color color;
 
     public GUIText guiText;
@@ -31,7 +31,8 @@ public class Player : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
-        mouseLook = this.GetComponent<MouseLook>();
+        mouseLook = Camera.mainCamera.GetComponent<MouseLook>();
+		sender = GetComponent<NetworkLaunchMessageSender>();
 	}
 
     // Update is called once per frame
@@ -45,7 +46,7 @@ public class Player : MonoBehaviour {
         
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
         {
-            Vector3 distanceVector = hit.point - player.transform.position;
+            Vector3 distanceVector = hit.point - transform.position;
             float distance = distanceVector.magnitude;
             GameObject targetObject = hit.transform.gameObject; //the side of the cube we hit
 
@@ -73,20 +74,19 @@ public class Player : MonoBehaviour {
 			
             //*********SEND DATA ABOUT CLICK***********//	
             LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, TimeManager.Instance.AveragePing);
-            NetworkLaunchMessageSender sender = player.GetComponent<NetworkLaunchMessageSender>();
             sender.SendLaunchOnRequest(launchMessage);
         }
 		
 		if(isFlying){
 			
 			//calculate the distance to target
-			Vector3 distanceVector = targetPosition - player.transform.position;
+			Vector3 distanceVector = targetPosition - transform.position;
 			float distance = distanceVector.magnitude;
 			
 			if (distance >= 5)
 			{
 				//move towards the target slowly
-				player.transform.position += (distanceVector.normalized * moveSpeed);
+				transform.position += (distanceVector.normalized * moveSpeed);
 				//player.transform.position = Vector3.Lerp(player.transform.position, targetPosition, Time.deltaTime * moveSpeed);
 			}
 			else
@@ -100,10 +100,10 @@ public class Player : MonoBehaviour {
 					theCube.setSideColor(targetObjectSide, color);
 				}
 				//upon arrival, turn around
-				player.transform.position = targetPosition;
+				transform.position = targetPosition;
 				
 				//slow these down somehow
-				player.transform.forward = normal; 
+				transform.forward = normal; 
 				mouseLook.lookingDir = transform.localEulerAngles;
 				isFlying = false;
 	            //Camera.main.ScreenPointToRay(-normal);

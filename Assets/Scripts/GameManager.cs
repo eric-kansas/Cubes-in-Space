@@ -31,9 +31,11 @@ public class GameManager : MonoBehaviour {
     private List<Vector3> positions;
 
     private GameObject myAvatar;
+	//private GameObject mainCamera;
     public GameObject avatarPF;
     public GameObject characterPF;
-
+	//public GameObject mainCameraPF;
+	
     public int myLatency;
 
     private string clientName;
@@ -55,7 +57,7 @@ public class GameManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-
+		
         SetupTheFox();
 
         TimeManager.Instance.Init();
@@ -136,11 +138,15 @@ public class GameManager : MonoBehaviour {
         {
             cha = Instantiate(characterPF, positions[whichColor], Quaternion.identity) as GameObject;
             myAvatar = cha;
+			// now that we have the player, give it to the MouseLook script
+			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar);
+			myAvatar.GetComponent<Player>().color = colors[whichColor];
         }
         else
         {
             cha = Instantiate(avatarPF, positions[whichColor], Quaternion.identity) as GameObject;
             otherClients.Add(user.Name, cha);
+			cha.GetComponent<Avatar>().color = colors[whichColor];
         }
 
         Character ch = cha.GetComponent<Character>();
