@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour {
     public GameObject avatarPF;
     public GameObject characterPF;
 	//public GameObject mainCameraPF;
+
+    List<Vector3> cubePosList = new List<Vector3>();
 	
     public int myLatency;
 
@@ -64,10 +66,10 @@ public class GameManager : MonoBehaviour {
         
         cubeList = new List<GameObject>();
 				
-        if (GrandCube)
-            BuildCubes();
-        else
+        if (!GrandCube)
             Debug.LogError("No GrandCube prefab assigned");
+        if(GameValues.isHost)
+            BuildCubes();
         
     }
 	
@@ -119,6 +121,25 @@ public class GameManager : MonoBehaviour {
         //tfSender.StartSendTransform();
 
         SetupListeners();
+
+        //check status of room
+        Debug.Log("Status of room: " + currentRoom.ContainsVariable("cubesInSpace"));
+        if (currentRoom.ContainsVariable("cubesInSpace"))
+        {
+            SFSArray cubes = (SFSArray)currentRoom.GetVariable("cubesInSpace").GetSFSArrayValue();
+            cubePosList = new List<Vector3>();
+            for (int i = 0; i < cubes.Size(); i++)
+            {
+                Vector3 pos = new Vector3();
+                pos.x = cubes.GetSFSObject(i).GetFloat("x");
+                pos.y = cubes.GetSFSObject(i).GetFloat("y");
+                pos.z = cubes.GetSFSObject(i).GetFloat("z");
+                
+                cubePosList.Add(pos);
+            }
+            loadWorld();
+        }
+
     }
 
     public void TimeSyncRequest()
@@ -198,6 +219,8 @@ public class GameManager : MonoBehaviour {
     void SetupListeners()
     {
         // listen for an smartfox events 
+        smartFox.RemoveAllEventListeners();
+
         smartFox.AddEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserLeaveRoom);
         smartFox.AddEventListener(SFSEvent.USER_COUNT_CHANGE, OnUserCountChange);
@@ -215,7 +238,7 @@ public class GameManager : MonoBehaviour {
     {
         try
         {
-            Debug.Log("extension:");
+           // Debug.Log("extension:");
             string cmd = (string)evt.Params["cmd"];
             ISFSObject dt = (SFSObject)evt.Params["params"];
             if (cmd == "time")
@@ -295,9 +318,54 @@ public class GameManager : MonoBehaviour {
 
     public void OnRoomVariablesUpdate(BaseEvent evt)
     {
+        Debug.Log("ROOM VARS");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
 
+        Debug.Log(changedVars.Contains("cubesInSpace"));
+        Debug.Log(changedVars.Contains("gameStarted"));
+        if (!GameValues.isHost)
+        {
+            // Check if the "gameStarted" variable was changed
+            if (changedVars.Contains("gameStarted"))
+            {
+                if (room.GetVariable("gameStarted").GetBoolValue() == true)
+                {
+                    Debug.Log("Game started");
+                }
+                else
+                {
+                    Debug.Log("Game stopped");
+                }
+            }
+            // Check if map has been uploaded
+            if (changedVars.Contains("cubesInSpace"))
+            {
+                Debug.Log("ROOM cubesInSpace");
+                cubePosList = new List<Vector3>();
+                ISFSArray data = room.GetVariable("cubesInSpace").GetSFSArrayValue();
+                for (int i = 0; i < data.Size(); i++)
+                {
+                    Vector3 pos = new Vector3();
+                    pos.x = data.GetSFSObject(i).GetFloat("x");
+                    pos.y = data.GetSFSObject(i).GetFloat("y");
+                    pos.z = data.GetSFSObject(i).GetFloat("z");
+                    cubePosList.Add(pos);
+                }
+
+                loadWorld();
+            }
+        }
+
+    }
+
+    private void loadWorld()
+    {
+        cubeList = new List<GameObject>();
+        for (int i = 0; i < cubePosList.Count; i++)
+        {
+            cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.identity));
+        }
     }
 
     //only message received currently is transform - refactor when this changes
@@ -330,6 +398,8 @@ public class GameManager : MonoBehaviour {
 
     private void BuildCubes()
     {
+        List<Vector3> cubePosList = new List<Vector3>();
+
         for (int i = 0; i < numberOfCubes; i++)
         {
             Vector3 randPos = new Vector3(
@@ -341,6 +411,30 @@ public class GameManager : MonoBehaviour {
 			
 			//add the newly created cube to the cubeList
 			cubeList.Add((GameObject) Instantiate(GrandCube, randPos, Quaternion.identity));
+            cubePosList.Add(randPos);
         }
+        SendCubesDataToServer(cubePosList);
     }
+
+    private void SendCubesDataToServer(List<Vector3> cubePosList)
+    {
+        List<RoomVariable> roomVars = new List<RoomVariable>();
+        SFSArray array = new SFSArray();
+        SFSObject sfsObject;
+
+        for (int i = 0; i < cubePosList.Count; i++)
+        {
+            sfsObject = new SFSObject();
+            sfsObject.PutInt("id", i);
+            sfsObject.PutFloat("x",cubePosList[i].x);
+            sfsObject.PutFloat("y", cubePosList[i].y);
+            sfsObject.PutFloat("z", cubePosList[i].z);
+            array.AddSFSObject(sfsObject);
+        }
+
+        Debug.Log("sending room");
+        roomVars.Add(new SFSRoomVariable("cubesInSpace", array));
+        smartFox.Send(new SetRoomVariablesRequest(roomVars));
+    }
+
 }
