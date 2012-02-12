@@ -92,7 +92,7 @@ public class Player : MonoBehaviour {
 			else
 			{
 				//we've hit, color the cube our color
-				if (targetObjectSide.name != "arena")
+				if (targetObjectSide.name != "arena" && targetObjectSide.name != "icosahedron" && targetObjectSide.name != "icosahedronframe")
 				{
 					GameObject cube = targetObjectSide.transform.parent.gameObject;
 					Cube theCube = cube.GetComponent<Cube>();

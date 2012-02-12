@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+
+Project("{EA0D2BE5-F8AE-D703-9E8C-ABDC61C0A086}") = "Cubes-in-Space - 3", "Assembly-CSharp-firstpass.csproj", "{89365CEC-9167-E576-5747-EA39E3565900}"
+EndProject
+Project("{EA0D2BE5-F8AE-D703-9E8C-ABDC61C0A086}") = "Cubes-in-Space - 3", "Assembly-CSharp.csproj", "{74612560-8D5C-784A-3684-8BF969B69552}"
+EndProject
+Project("{EA0D2BE5-F8AE-D703-9E8C-ABDC61C0A086}") = "Cubes-in-Space - 3", "Assembly-UnityScript-firstpass.unityproj", "{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89365CEC-9167-E576-5747-EA39E3565900}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89365CEC-9167-E576-5747-EA39E3565900}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89365CEC-9167-E576-5747-EA39E3565900}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89365CEC-9167-E576-5747-EA39E3565900}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74612560-8D5C-784A-3684-8BF969B69552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74612560-8D5C-784A-3684-8BF969B69552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74612560-8D5C-784A-3684-8BF969B69552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74612560-8D5C-784A-3684-8BF969B69552}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	
+EndGlobal
