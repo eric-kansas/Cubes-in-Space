@@ -106,15 +106,14 @@ public class GameManager : MonoBehaviour {
 
         // set up arrays of positions 
         positions = new List<Vector3>();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
         {
             positions.Add(new Vector3(0, 0, i * 15));
         }
         
         otherClients = new Dictionary<string, GameObject>();
 
-        // create my avatar
-        MakeCharacter(smartFox.MySelf);
+        
 
         //start sending transform data
         //NetworkTransformSender tfSender = myAvatar.GetComponent<NetworkTransformSender>();
@@ -122,8 +121,10 @@ public class GameManager : MonoBehaviour {
 
         SetupListeners();
 
+        // create my avatar
+        MakeCharacter(smartFox.MySelf);
+
         //check status of room
-        Debug.Log("Status of room: " + currentRoom.ContainsVariable("cubesInSpace"));
         if (currentRoom.ContainsVariable("cubesInSpace"))
         {
             SFSArray cubes = (SFSArray)currentRoom.GetVariable("cubesInSpace").GetSFSArrayValue();
@@ -140,6 +141,12 @@ public class GameManager : MonoBehaviour {
             loadWorld();
         }
 
+        for(int i = 0; i < currentRoom.UserList.Count; i++)
+        {
+            MakeCharacter(currentRoom.UserList[i]);
+        }
+        
+
     }
 
     public void TimeSyncRequest()
@@ -150,13 +157,16 @@ public class GameManager : MonoBehaviour {
 
     void MakeCharacter(User user)
     {
-        int whichColor = GetColorNumber(user);
-        if (whichColor == -1)
-            Debug.Log("-1 fault in color picker");
+        //int whichColor = GetColorNumber(user);
+
+        int whichColor = 0;
 
         GameObject cha;
         if (user.IsItMe)
         {
+            whichColor = GameValues.colorIndex;
+            if (whichColor == -1)
+                Debug.Log("-1 fault in color picker");
             cha = Instantiate(characterPF, positions[whichColor], Quaternion.identity) as GameObject;
             myAvatar = cha;
 			// now that we have the player, give it to the MouseLook script
@@ -165,6 +175,7 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
+            Debug.Log("here in thing: " + whichColor);
             cha = Instantiate(avatarPF, positions[whichColor], Quaternion.identity) as GameObject;
             otherClients.Add(user.Name, cha);
 			cha.GetComponent<Avatar>().color = colors[whichColor];
@@ -426,6 +437,7 @@ public class GameManager : MonoBehaviour {
         {
             sfsObject = new SFSObject();
             sfsObject.PutInt("id", i);
+            sfsObject.PutIntArray("sides", new int[6]);
             sfsObject.PutFloat("x",cubePosList[i].x);
             sfsObject.PutFloat("y", cubePosList[i].y);
             sfsObject.PutFloat("z", cubePosList[i].z);

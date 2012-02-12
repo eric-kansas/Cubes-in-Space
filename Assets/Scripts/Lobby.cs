@@ -178,10 +178,53 @@ public class Lobby : MonoBehaviour {
                 Debug.Log("not the host");
                 GameValues.isHost = false;
             }
+            GameValues.colorIndex = GetColorNumber(smartFox.MySelf);
             Application.LoadLevel("Game Lobby");
+            Debug.Log("WHWHOWHWOHWOHOWHWOHWO::::: " + GameValues.colorIndex); 
             //smartFox.Send(new SpectatorToPlayerRequest());
         }
 	}
+
+    private int GetColorNumber(User user)
+    {
+        int colorNum = -1;
+
+        if (user.IsItMe)
+        {
+
+            //assign a new color
+            //first get a copy of available numbers, which is a room variable
+            SFSArray numbers = (SFSArray)currentActiveRoom.GetVariable("colorNums").GetSFSArrayValue();
+            Debug.Log("ya :" + numbers.Size());
+            int ran = UnityEngine.Random.Range(0, numbers.Size() - 1);
+            colorNum = numbers.GetInt(ran);
+
+            //update room variable 
+            numbers.RemoveElementAt(ran);
+            //send back to store on server
+            List<RoomVariable> rData = new List<RoomVariable>();
+            rData.Add(new SFSRoomVariable("colorNums", numbers));
+            smartFox.Send(new SetRoomVariablesRequest(rData));
+
+            //store my own color on server as user data
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("colorIndex", colorNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
+
+        }
+        else
+        {
+            try
+            {
+                colorNum = (int)user.GetVariable("colorIndex").GetIntValue();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("error in else of getColorNumber " + ex.ToString());
+            }
+        }
+        return colorNum;
+    }
 	
 	public void OnUserEnterRoom(BaseEvent evt) {
 		User user = (User)evt.Params["user"];
@@ -338,9 +381,18 @@ public class Lobby : MonoBehaviour {
                     List<RoomVariable> roomVariables = new List<RoomVariable>();
                     roomVariables.Add(new SFSRoomVariable("host", username));
                     roomVariables.Add(new SFSRoomVariable("gameStarted", false));
+
+                    // set up arrays of colors 
+                    SFSArray nums = new SFSArray();
+                    for (int i = 0; i < 5; i++)
+                    {
+                        nums.AddInt(i);
+                    }
+
+                    roomVariables.Add(new SFSRoomVariable("colorNums", nums));
                     settings.Variables = roomVariables;
 					
-					smartFox.Send(new CreateRoomRequest(settings));
+					smartFox.Send(new CreateRoomRequest(settings, true));
                     Debug.Log("new room " + username + "- Room");
 				}
 			}

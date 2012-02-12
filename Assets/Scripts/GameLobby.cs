@@ -103,19 +103,16 @@ public class GameLobby : MonoBehaviour
     {
         Room room = (Room)evt.Params["room"];
         currentActiveRoom = room;
-        Debug.Log("joined " + room.Name);
-        Debug.Log("joinedtype " + room.IsGame);
         if (room.Name == "The Lobby")
             Application.LoadLevel(room.Name);
         else if (room.IsGame)
         {
-
             Debug.Log("is game!!!!");
             Application.LoadLevel("testScene");
         }
         else
         {
-
+            Debug.Log("joined " + room.Name);
             Application.LoadLevel("Game Lobby");
             //smartFox.Send(new SpectatorToPlayerRequest());
         }
@@ -146,7 +143,7 @@ public class GameLobby : MonoBehaviour
                 {
                     Debug.Log("Game started");
                     String[] nameParts = this.currentActiveRoom.Name.Split('-');
-                    smartFox.Send(new JoinRoomRequest(nameParts[0] + "- Game"));
+                    smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game"));
                 }
                 else
                 {
@@ -274,25 +271,25 @@ public class GameLobby : MonoBehaviour
                 // ****** Create new room ******* //
                 //let smartfox take care of error if duplicate name
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
-                String gameName = nameParts[0] + "- Game";
+                String gameName = nameParts[0] + " - Game";
 
-                Debug.Log("new room " + gameName);
                 RoomSettings settings = new RoomSettings(gameName);
                 // how many players allowed
                 settings.MaxUsers = 8;
                 settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
-                //settings.GroupId = "create";
                 settings.IsGame = true;
 
                 //store indices into color arrays for setting user colors, delete as used
+                /*
                 SFSArray nums = new SFSArray();
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < 5; i++)
                 {
                     nums.AddInt(i);
                 }
 
                 SFSRoomVariable colorNums = new SFSRoomVariable("colorNums", nums);
                 settings.Variables.Add(colorNums);
+                */
                 smartFox.Send(new CreateRoomRequest(settings, true));
 
             }
