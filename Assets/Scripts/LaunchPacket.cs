@@ -11,14 +11,14 @@ public class LaunchPacket
     private Vector3 launchPosition; // Position as Vector3
     private Vector3 launchDestination; // Position as Vector3
     private double localGameTime; //current game time that event happened
-    private double localLatency; //my average latency to the server at that time 
+    //private double localLatency; //my average latency to the server at that time 
 
     public LaunchPacket()
     {
 
     }
 
-    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double latency)
+    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime)
     {
 
         // Launch Position
@@ -29,9 +29,6 @@ public class LaunchPacket
 
         //Local Game Time
         this.localGameTime = gameTime;
-
-        //Local Latency
-        this.localLatency = latency;
     }
 
 	// Check if this transform is different from given one with specified accuracy
@@ -56,9 +53,6 @@ public class LaunchPacket
 
         //Local Game Time
         this.localGameTime = launchMessage.localGameTime;
-
-        //Local Latency
-        this.localLatency = launchMessage.localLatency;
 	}
 	
 	// Copy the Unity transform to itself
@@ -75,7 +69,6 @@ public class LaunchPacket
         holder += " Start Pos: " + launchPosition;
         holder += " Destination: " + launchDestination;
         holder += " Game Time: " + localGameTime;
-        holder += " Latency: " + localLatency;
         
         return holder;
     }
@@ -100,9 +93,6 @@ public class LaunchPacket
 
         //Local Game Time
         launchMessage.PutDouble("localGameTime", this.localGameTime);
-
-        //Local Latency
-        launchMessage.PutDouble("localLatency", this.localLatency);
 
         data.PutSFSObject("launchMessage", launchMessage);
     }
@@ -134,9 +124,6 @@ public class LaunchPacket
 
         //get & set senders local game time
         launchMessage.localGameTime = launchData.GetDouble("localGameTime");
-
-        //get & set senders latency
-        launchMessage.localLatency = launchData.GetDouble("localLatency");
 
         return launchMessage;
 	}
@@ -190,14 +177,6 @@ public class LaunchPacket
         get
         {
             return localGameTime;
-        }
-    }
-
-    public double LocalLatency
-    {
-        get
-        {
-            return localLatency;
         }
     }
 }

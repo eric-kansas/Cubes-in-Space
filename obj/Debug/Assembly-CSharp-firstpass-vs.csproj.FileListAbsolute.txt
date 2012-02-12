@@ -6,3 +6,4 @@ P:\Users\emh5567\Cubes-in-Space\Temp\bin\Debug\nunit.framework.dll
 P:\Users\emh5567\Cubes-in-Space\obj\Debug\ResolveAssemblyReference.cache
 P:\Users\emh5567\Cubes-in-Space\obj\Debug\Assembly-CSharp-firstpass.dll
 P:\Users\emh5567\Cubes-in-Space\obj\Debug\Assembly-CSharp-firstpass.pdb
+P:\Users\emh5567\Cubes-in-Space\Temp\bin\Debug\SmartFox2.dll

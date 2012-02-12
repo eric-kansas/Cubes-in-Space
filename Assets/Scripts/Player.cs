@@ -73,7 +73,7 @@ public class Player : MonoBehaviour {
 			isFlying = true;
 			
             //*********SEND DATA ABOUT CLICK***********//	
-            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, TimeManager.Instance.AveragePing);
+            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp);
             sender.SendLaunchOnRequest(launchMessage);
         }
 		

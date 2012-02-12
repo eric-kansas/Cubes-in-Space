@@ -232,7 +232,7 @@ public class GameManager : MonoBehaviour {
 
     private void HandleServerTime(ISFSObject dt)
     {
-        Debug.Log("server time");
+        //Debug.Log("server time");
         long time = dt.GetLong("t");
         TimeManager.Instance.Synchronize(Convert.ToDouble(time));
     }
@@ -250,7 +250,6 @@ public class GameManager : MonoBehaviour {
     {
         //remove this user from our world and update our data structures
         User user = (User)evt.Params["user"];
-
     }
 
 
@@ -267,6 +266,7 @@ public class GameManager : MonoBehaviour {
         Screen.showCursor = true;
         Application.LoadLevel("The Lobby");
     }
+
     private void OnSpectatorToPlayer(BaseEvent evt)
     {
         User user = (User)evt.Params["user"];
@@ -303,7 +303,6 @@ public class GameManager : MonoBehaviour {
     //only message received currently is transform - refactor when this changes
     private void OnObjectMessageReceived(BaseEvent evt)
     {
-
         User sender = (User)evt.Params["sender"];
 
         //if we don't have this client in our client list add them 
@@ -320,14 +319,6 @@ public class GameManager : MonoBehaviour {
             NetworkLaunchMessageReceiver rec = otherClients[sender.Name].GetComponent<NetworkLaunchMessageReceiver>();
             rec.ReceiveLaunchData(launchMessage);
         }         
-    }
-
-    // when user enters room, we send our transform so they can update us
-    public void OnPingPong(BaseEvent evt)
-    {
-        myLatency = (int)evt.Params["lagValue"];
-        //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
-        //sender.SendLaunchOnRequest();
     }
 
     public void SendLaunchMessage(LaunchPacket launchMessage)

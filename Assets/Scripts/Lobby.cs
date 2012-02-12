@@ -36,7 +36,6 @@ public class Lobby : MonoBehaviour {
 	private string[] roomNameStrings; //Names of rooms
 	private string[] roomFullStrings; //Names and descriptions
 	private int screenW;
-
 	
 	void Start()
 	{
@@ -169,6 +168,16 @@ public class Lobby : MonoBehaviour {
             Application.LoadLevel("testScene");
         }else
         {
+            if (username.Equals(room.GetVariable("host").GetStringValue()))
+            {
+                Debug.Log("YES IM THE HOST WOOT!!");
+                GameValues.isHost = true;
+            }
+            else
+            {
+                Debug.Log("not the host");
+                GameValues.isHost = false;
+            }
             Application.LoadLevel("Game Lobby");
             //smartFox.Send(new SpectatorToPlayerRequest());
         }
@@ -320,14 +329,19 @@ public class Lobby : MonoBehaviour {
 					
 					
 					//let smartfox take care of error if duplicate name
-					RoomSettings settings = new RoomSettings(username + "'s Room");
+					RoomSettings settings = new RoomSettings(username + " - Room");
 					// how many players allowed
 					settings.MaxUsers = 5;
                     //settings.GroupId = "create";
 					//settings.IsGame = true;
+
+                    List<RoomVariable> roomVariables = new List<RoomVariable>();
+                    roomVariables.Add(new SFSRoomVariable("host", username));
+                    roomVariables.Add(new SFSRoomVariable("gameStarted", false));
+                    settings.Variables = roomVariables;
 					
 					smartFox.Send(new CreateRoomRequest(settings));
-                    Debug.Log("new room " + username + "'s Room");
+                    Debug.Log("new room " + username + "- Room");
 				}
 			}
 		GUILayout.EndArea();

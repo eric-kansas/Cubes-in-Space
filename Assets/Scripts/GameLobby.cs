@@ -66,6 +66,7 @@ public class GameLobby : MonoBehaviour
         smartFox.AddEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
         smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserLeaveRoom);
         smartFox.AddEventListener(SFSEvent.USER_COUNT_CHANGE, OnUserCountChange);
+        smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
     }
 
     void FixedUpdate()
@@ -114,6 +115,7 @@ public class GameLobby : MonoBehaviour
         }
         else
         {
+
             Application.LoadLevel("Game Lobby");
             //smartFox.Send(new SpectatorToPlayerRequest());
         }
@@ -123,6 +125,36 @@ public class GameLobby : MonoBehaviour
     {
         User user = (User)evt.Params["user"];
         messages.Add(user.Name + " has entered the room.");
+        if (user.IsItMe)
+        {
+
+        }
+    }
+
+    public void OnRoomVariablesUpdate(BaseEvent evt)
+    {
+        Debug.Log("ROOM VARS");
+        Room room = (Room)evt.Params["room"];
+        ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
+
+        if (!GameValues.isHost)
+        {
+            // Check if the "gameStarted" variable was changed
+            if (changedVars.Contains("gameStarted"))
+            {
+                if (room.GetVariable("gameStarted").GetBoolValue() == true)
+                {
+                    Debug.Log("Game started");
+                    String[] nameParts = this.currentActiveRoom.Name.Split('-');
+                    smartFox.Send(new JoinRoomRequest(nameParts[0] + "- Game"));
+                }
+                else
+                {
+                    Debug.Log("Game stopped");
+                }
+            }
+        }
+ 
     }
 
     private void OnUserLeaveRoom(BaseEvent evt)
@@ -228,32 +260,42 @@ public class GameLobby : MonoBehaviour
     {
         GUILayout.BeginArea(new Rect(screenW - 190, 290, 180, 150));
 
-        if (GUI.Button(new Rect(80, 110, 85, 24), "Start Game"))
+        if (GameValues.isHost)
         {
-
-            // ****** Create new room ******* //
-            //let smartfox take care of error if duplicate name
-            String gameName = this.currentActiveRoom.Name.Substring(0, currentActiveRoom.Name.Length - 4) + "Game";
-
-            Debug.Log("new room " + gameName);
-            RoomSettings settings = new RoomSettings(gameName);
-            // how many players allowed
-            settings.MaxUsers = 8;
-            settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
-            //settings.GroupId = "create";
-            settings.IsGame = true;
-
-            //store indices into color arrays for setting user colors, delete as used
-            SFSArray nums = new SFSArray();
-            for (int i = 0; i < 2; i++)
+            if (GUI.Button(new Rect(80, 110, 85, 24), "Start Game"))
             {
-                nums.AddInt(i);
-            }
 
-            SFSRoomVariable colorNums = new SFSRoomVariable("colorNums", nums);
-            settings.Variables.Add(colorNums);
-            smartFox.Send(new CreateRoomRequest(settings, true));
-           
+                List<RoomVariable> roomVars = new List<RoomVariable>();
+                roomVars.Add(new SFSRoomVariable("gameStarted", true));
+                Debug.Log("sedning start");
+                smartFox.Send(new SetRoomVariablesRequest(roomVars));
+
+
+                // ****** Create new room ******* //
+                //let smartfox take care of error if duplicate name
+                String[] nameParts = this.currentActiveRoom.Name.Split('-');
+                String gameName = nameParts[0] + "- Game";
+
+                Debug.Log("new room " + gameName);
+                RoomSettings settings = new RoomSettings(gameName);
+                // how many players allowed
+                settings.MaxUsers = 8;
+                settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
+                //settings.GroupId = "create";
+                settings.IsGame = true;
+
+                //store indices into color arrays for setting user colors, delete as used
+                SFSArray nums = new SFSArray();
+                for (int i = 0; i < 2; i++)
+                {
+                    nums.AddInt(i);
+                }
+
+                SFSRoomVariable colorNums = new SFSRoomVariable("colorNums", nums);
+                settings.Variables.Add(colorNums);
+                smartFox.Send(new CreateRoomRequest(settings, true));
+
+            }
         }
         GUILayout.EndArea();
     }
