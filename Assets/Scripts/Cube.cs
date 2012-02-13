@@ -11,10 +11,11 @@ public class Cube : MonoBehaviour {
     {
         get { return sides; }
     }
-	
+
 	// Use this for initialization
 	void Start () {
 		sides = new List<GameObject>();
+        Quaternion cubeRot = transform.rotation;
 		
         if (sidePrefab)
         {
@@ -66,6 +67,12 @@ public class Cube : MonoBehaviour {
 				//add the side to the list
 				//sides.Add(side);
             }
+            Vector3 randRot = new Vector3(
+                                          UnityEngine.Random.value * 45,
+                                          UnityEngine.Random.value * 45,
+                                          UnityEngine.Random.value * 45
+                                         );
+            this.transform.rotation = Quaternion.Euler(randRot);
         }
         else
         {

@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour {
 	//public GameObject mainCameraPF;
 
     List<Vector3> cubePosList = new List<Vector3>();
+    List<Vector3> cubeRotList = new List<Vector3>();
 	
     public int myLatency;
 
@@ -68,8 +69,12 @@ public class GameManager : MonoBehaviour {
 				
         if (!GrandCube)
             Debug.LogError("No GrandCube prefab assigned");
-        if(GameValues.isHost)
+        if (GameValues.isHost)
+        {
             BuildCubes();
+            BuildCubeLists();
+            SendCubesDataToServer(cubePosList, cubeRotList);
+        }
         
 		
 		// Lock the mouse to the center
@@ -78,8 +83,7 @@ public class GameManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		//Debug.Log("Game Manager Update Loop...");
-		
+	
 	}
 
     void FixedUpdate()
@@ -137,6 +141,7 @@ public class GameManager : MonoBehaviour {
 			//make sure that all the cubes in the host room are the same in all other clients
             SFSArray cubes = (SFSArray)currentRoom.GetVariable("cubesInSpace").GetSFSArrayValue();
             cubePosList = new List<Vector3>();
+            cubeRotList = new List<Vector3>();
             for (int i = 0; i < cubes.Size(); i++)
             {
                 Vector3 pos = new Vector3();
@@ -145,6 +150,13 @@ public class GameManager : MonoBehaviour {
                 pos.z = cubes.GetSFSObject(i).GetFloat("z");
                 
                 cubePosList.Add(pos);
+
+                Vector3 rot = new Vector3();
+                rot.x = cubes.GetSFSObject(i).GetFloat("rx");
+                rot.y = cubes.GetSFSObject(i).GetFloat("ry");
+                rot.z = cubes.GetSFSObject(i).GetFloat("rz");
+
+                cubeRotList.Add(rot);
             }
             loadWorld();
         }
@@ -376,6 +388,7 @@ public class GameManager : MonoBehaviour {
             {
                 Debug.Log("ROOM cubesInSpace");
                 cubePosList = new List<Vector3>();
+                cubeRotList = new List<Vector3>();
                 ISFSArray data = room.GetVariable("cubesInSpace").GetSFSArrayValue();
                 for (int i = 0; i < data.Size(); i++)
                 {
@@ -384,6 +397,13 @@ public class GameManager : MonoBehaviour {
                     pos.y = data.GetSFSObject(i).GetFloat("y");
                     pos.z = data.GetSFSObject(i).GetFloat("z");
                     cubePosList.Add(pos);
+
+                    Vector3 rot = new Vector3();
+                    rot.x = data.GetSFSObject(i).GetFloat("rx");
+                    rot.y = data.GetSFSObject(i).GetFloat("ry");
+                    rot.z = data.GetSFSObject(i).GetFloat("rz");
+                    cubeRotList.Add(rot);
+
                 }
 
                 loadWorld();
@@ -397,7 +417,7 @@ public class GameManager : MonoBehaviour {
         cubeList = new List<GameObject>();
         for (int i = 0; i < cubePosList.Count; i++)
         {
-            cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.identity));
+            cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i])));
         }
     }
 
@@ -444,27 +464,33 @@ public class GameManager : MonoBehaviour {
         for (int i = 0; i < numberOfCubes; i++)
         {
             Vector3 randPos = new Vector3(
-                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace*2f)),
+                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f)),
                                           -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f)),
                                           -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f))
                                           );
-			//Instantiate(GrandCube, randPos, Quaternion.identity);
 			
 			//add the newly created cube to the cubeList
 			cubeList.Add((GameObject) Instantiate(GrandCube, randPos, Quaternion.identity));
-            cubePosList.Add(randPos);
         }
 		//make sure everyone knows where those cubes are
-        SendCubesDataToServer(cubePosList);
     }
 
-    private void SendCubesDataToServer(List<Vector3> cubePosList)
+    private void BuildCubeLists()
+    {
+        for (int i = 0; i < cubeList.Count; i++)
+        {
+            cubePosList.Add(cubeList[i].transform.position);
+            cubeRotList.Add(cubeList[i].transform.rotation.eulerAngles);
+        }
+    }
+
+    private void SendCubesDataToServer(List<Vector3> cubePosList, List<Vector3> cubeRotList)
     {
         List<RoomVariable> roomVars = new List<RoomVariable>();
         SFSArray array = new SFSArray();
         SFSObject sfsObject;
 
-        for (int i = 0; i < cubePosList.Count; i++)
+        for (int i = 0; i < cubeList.Count; i++)
         {
             sfsObject = new SFSObject();
             sfsObject.PutInt("id", i);
@@ -472,6 +498,9 @@ public class GameManager : MonoBehaviour {
             sfsObject.PutFloat("x",cubePosList[i].x);
             sfsObject.PutFloat("y", cubePosList[i].y);
             sfsObject.PutFloat("z", cubePosList[i].z);
+            sfsObject.PutFloat("rx", cubeRotList[i].x);
+            sfsObject.PutFloat("ry", cubeRotList[i].y);
+            sfsObject.PutFloat("rz", cubeRotList[i].z);
             array.AddSFSObject(sfsObject);
         }
 
