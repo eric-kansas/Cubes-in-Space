@@ -19,14 +19,14 @@ public class MouseLook : MonoBehaviour {
 
 	public enum RotationAxes { MouseXAndY = 0, MouseX = 1, MouseY = 2 }
 	public RotationAxes axes = RotationAxes.MouseXAndY;
-	public float sensitivityX = 10F;
-	public float sensitivityY = 10F;
+	private float sensitivityX = 100F;
+	private float sensitivityY = 100F;
 
-	public float minimumX = -45F;
-	public float maximumX = 45F;
+	public float minimumX = -Mathf.PI/4;	
+	public float maximumX = Mathf.PI/4;
 
-	public float minimumY = -45F;
-	public float maximumY = 45F;
+	public float minimumY = -Mathf.PI/4;
+	public float maximumY = Mathf.PI/4;
 	
 	public GameObject player;
 
@@ -38,6 +38,9 @@ public class MouseLook : MonoBehaviour {
     Vector3 localTransfrom; 
     float rotationX = 0F;
     float rotationY = 0F;
+	
+	float cummulativeRotationX = 0f;
+	float cummulativeRotationY = 0f;
 
 	void Update ()
 	{
@@ -49,8 +52,25 @@ public class MouseLook : MonoBehaviour {
 			
 			if (axes == RotationAxes.MouseXAndY)
 			{
+				// Get the mouse x rotation and use time along with a scaling factor
+				// to add a controlled amount to our cummulative rotation about the y-axis
+				cummulativeRotationX += Input.GetAxis("Mouse Y") * Time.deltaTime * sensitivityX;
+				cummulativeRotationX = Mathf.Clamp(cummulativeRotationX, minimumX, maximumX);
+				// Do the same for the y, about the x-axis
+				cummulativeRotationY += Input.GetAxis("Mouse X") * Time.deltaTime * sensitivityY;
+				cummulativeRotationY = Mathf.Clamp(cummulativeRotationY, minimumY, maximumY);
+				
+				// create a Quaternion to hold our current cummulative rotation about the x and y axes
+				Quaternion currentRotation = Quaternion.Euler(-cummulativeRotationX, cummulativeRotationY, 0.0f);
+				
+				// Use the Quaternion to update the transform of our camera based on initial rotation
+				// and the current rotation
+				Quaternion initialOrientation = Quaternion.Euler(lookingDir);
+				transform.rotation = initialOrientation * currentRotation;
 	
-	
+				//======================================================
+				// Old way, doesn't work because it is based off of Global axes
+				/*
 	            rotationX = localTransfrom.y + Input.GetAxis("Mouse X") * sensitivityX;
 	            rotationX = Mathf.Clamp(rotationX, lookingDir.y + minimumX, lookingDir.y + maximumX);
 				
@@ -60,6 +80,7 @@ public class MouseLook : MonoBehaviour {
 	
 	            localTransfrom = new Vector3(rotationY, rotationX, 0);
 	            transform.localEulerAngles = new Vector3(rotationY, rotationX, 0);
+	            */
 			}
 			else if (axes == RotationAxes.MouseX)
 			{
@@ -89,8 +110,16 @@ public class MouseLook : MonoBehaviour {
         localTransfrom = player.transform.eulerAngles;
 
         lookingDir = player.transform.eulerAngles;
+		cummulativeRotationX = lookingDir.x;
+		cummulativeRotationY = lookingDir.y;
 		
 		inGame = true;
+	}
+	public void setLookingDir(Vector3 newDir)
+	{
+		lookingDir = newDir;
+		cummulativeRotationX = 0.0f;
+		cummulativeRotationY = 0.0f;
 	}
 	
 }
