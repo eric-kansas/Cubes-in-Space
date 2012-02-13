@@ -22,7 +22,9 @@ public class NetworkLaunchMessageReceiver : MonoBehaviour {
 		
 		//parse the packet and move the enemy avatar
 		//this.transform.position = Vector3.Lerp(launchMessage.LaunchPosition, launchMessage.LaunchDestination, moveTime);
+        Debug.Log(launchMessage.LaunchDestination);
 		this.transform.position = launchMessage.LaunchDestination;
+        Debug.Log(this.transform.position);
 		this.transform.LookAt(launchMessage.LaunchDestination);
 		//Debug.Log("\t-User: " + this.name + " is moving towards the destination now");
 		

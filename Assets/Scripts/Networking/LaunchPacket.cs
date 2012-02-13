@@ -104,8 +104,9 @@ public class LaunchPacket
     {
         LaunchPacket launchMessage = new LaunchPacket();
 
+        
         ISFSObject launchData = data.GetSFSObject("launchMessage");
-
+        
         launchMessage.type = launchData.GetUtfString("messageType");
 
         //get launch pos
@@ -122,7 +123,7 @@ public class LaunchPacket
         float ez = launchData.GetFloat("ez");
 
         //set lauch pos in object
-        launchMessage.launchPosition = new Vector3(ex, ey, ez);
+        launchMessage.launchDestination = new Vector3(ex, ey, ez);
 
         //get & set senders local game time
         launchMessage.localGameTime = launchData.GetDouble("localGameTime");

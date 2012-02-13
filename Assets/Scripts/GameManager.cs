@@ -404,13 +404,6 @@ public class GameManager : MonoBehaviour {
     private void OnObjectMessageReceived(BaseEvent evt)
     {
         User sender = (User)evt.Params["sender"];
-
-        //if we don't have this client in our client list add them 
-        /*if (!otherClients.ContainsKey (sender.Name)){
-            Debug.Log ("making " + sender.Name);
-            MakeCharacter (sender);
-        }*/
-
         ISFSObject data = (SFSObject)evt.Params["message"];
 		
 		Debug.Log("here in object message the sender is: " + sender.Name);
@@ -436,6 +429,8 @@ public class GameManager : MonoBehaviour {
     {
 		Debug.Log("Sending Launch Message");
         ISFSObject data = new SFSObject();
+        data.GetSFSObject("launchMessage");
+
         data = launchMessage.ToSFSObject(data);
         smartFox.Send(new ObjectMessageRequest(data));
     }
