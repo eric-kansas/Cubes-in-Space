@@ -26,6 +26,7 @@ public class Lobby : MonoBehaviour {
 	private ArrayList messages = new ArrayList();
 		
 	public GUISkin gSkin;
+    public Texture2D titleImage;
 	
 	//keep track of room we're in
 	private Room currentActiveRoom;
@@ -273,7 +274,8 @@ public class Lobby : MonoBehaviour {
 	void OnGUI() {
 		if (smartFox == null) return;
 		screenW = Screen.width;
-		GUI.skin = gSkin;
+        if (gSkin)
+		    GUI.skin = gSkin;
 				
 		// Login
 		if (!isLoggedIn) {
@@ -287,138 +289,187 @@ public class Lobby : MonoBehaviour {
 			if(currentActiveRoom.Name == "The Lobby")
 			{
 				DrawLobbyGUI();
-				DrawRoomsGUI();
 			}
 		}
 	}
 	
 	
 	private void DrawLoginGUI(){
-		GUI.Label(new Rect(2, -2, 680, 70), "", "SFSLogo");
-		GUI.Label(new Rect(10, 90, 100, 100), "Username: ");
-		username = GUI.TextField(new Rect(100, 90, 200, 20), username, 25); 
-	
-		GUI.Label(new Rect(10, 180, 100, 100), "Server: ");
-		serverName = GUI.TextField(new Rect(100, 180, 200, 20), serverName, 25);
+        GUILayout.BeginArea(new Rect((Screen.width / 2) - (titleImage.width / 2), Screen.height / 2 - (titleImage.height), titleImage.width, titleImage.height * 2));
+        GUILayout.BeginVertical();
 
-		GUI.Label(new Rect(10, 210, 100, 100), "Port: ");
-		serverPort = int.Parse(GUI.TextField(new Rect(100, 210, 200, 20), serverPort.ToString(), 4));
+        //GUI.Box(new Rect(0, 0 , titleImage.width, titleImage.height * 2), "area is here");
+        GUILayout.Label(titleImage);
 
-		GUI.Label(new Rect(10, 240, 100, 100), loginErrorMessage);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Username: ", GUILayout.MaxWidth(100));
+        username = GUILayout.TextField(username, 25, GUILayout.MaxWidth(200));
+        GUILayout.EndHorizontal();
 
-		if (GUI.Button(new Rect(100, 270, 100, 24), "Login")  || 
-	    (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
-		{
-			AddEventListeners();
-			smartFox.Connect(serverName, serverPort);
-		}	
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Server: ", GUILayout.MaxWidth(100));
+        serverName = GUILayout.TextField(serverName, 25, GUILayout.MaxWidth(200));
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Port: ", GUILayout.MaxWidth(100));
+        serverPort = int.Parse(GUILayout.TextField(serverPort.ToString(), 4, GUILayout.MaxWidth(200)));
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label(loginErrorMessage);
+
+        if (GUILayout.Button("Login", GUILayout.MaxWidth(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
+        {
+            AddEventListeners();
+            smartFox.Connect(serverName, serverPort);
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
 	}
 			
 	private void DrawLobbyGUI(){
-		GUI.Label(new Rect(2, -2, 680, 70), "", "SFSLogo");
-		DrawUsersGUI();	
-		DrawChatGUI();
-		
-		// Send message
-		newMessage = GUI.TextField(new Rect(10, 480, 370, 20), newMessage, 50);
-		if (GUI.Button(new Rect(390, 478, 90, 24), "Send")  || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
-		{
-			smartFox.Send( new PublicMessageRequest(newMessage) );
-			newMessage = "";
-		}
-		// Logout button
-		if (GUI.Button (new Rect (screenW - 115, 20, 85, 24), "Logout")) {
-			smartFox.Send( new LogoutRequest() );
-		}
+        DrawUsersGUI(new Rect(10, 10, 180, 300));
+        DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
+        DrawRoomsGUI(new Rect(200, 10, 600, 300));
 	}
-		
-		
-	private void DrawUsersGUI(){
-		GUI.Box (new Rect (screenW - 200, 80, 180, 170), "Users");
-		GUILayout.BeginArea (new Rect (screenW - 190, 110, 150, 160));
-			userScrollPosition = GUILayout.BeginScrollView (userScrollPosition, GUILayout.Width (150), GUILayout.Height (150));
-			GUILayout.BeginVertical ();
-			
-				List<User> userList = currentActiveRoom.UserList;
-				foreach (User user in userList) {
-					GUILayout.Label (user.Name); 
-				}
-			GUILayout.EndVertical ();
-			GUILayout.EndScrollView ();
-		GUILayout.EndArea ();
-	}
-	
-	private void DrawRoomsGUI(){
-		roomSelection = -1;
-		GUI.Box (new Rect (screenW - 200, 260, 180, 130), "Room List");
-		GUILayout.BeginArea (new Rect (screenW - 190, 290, 180, 150));
-			if (smartFox.RoomList.Count >= 1) {		
-				roomScrollPosition = GUILayout.BeginScrollView (roomScrollPosition, GUILayout.Width (180), GUILayout.Height (130));
-					roomSelection = GUILayout.SelectionGrid (roomSelection, roomFullStrings, 1, "RoomListButton");
-					
-					if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name) {
-						smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection]));
-					}
-				GUILayout.EndScrollView ();
-				
-			} else {
-				GUILayout.Label ("No rooms available to join");
-			}
-			
-			// Game Room button
-			//	this button will create and initialize a room settings room
-			//	only the host can start the game
-			if (currentActiveRoom.Name == "The Lobby"){
-				if (GUI.Button (new Rect (80, 110, 85, 24), "Make Game")) {		
 
-					// ****** Create new room ******* //
-					
-					
-					//let smartfox take care of error if duplicate name
-					RoomSettings settings = new RoomSettings(username + " - Pregame Lobby");
-					// how many players allowed
-					settings.MaxUsers = 12;
-                    //settings.GroupId = "create";
-					//settings.IsGame = true;
-						
-				
-					//set up all the necessary room variables
-                    List<RoomVariable> roomVariables = new List<RoomVariable>();
-                    roomVariables.Add(new SFSRoomVariable("host", username));
-                    roomVariables.Add(new SFSRoomVariable("gameStarted", false));
 
-                    // set up arrays of colors 
-                    SFSArray nums = new SFSArray();
-                    for (int i = 0; i < settings.MaxUsers; i++)
-                    {
-                        nums.AddInt(i);
-						//use these numbers as the player's id to the server
-                    }
+    private void DrawUsersGUI(Rect screenPos)
+    {
 
-                    roomVariables.Add(new SFSRoomVariable("colorNums", nums)); //make this work with team colors
-                    settings.Variables = roomVariables;
-					
-					smartFox.Send(new CreateRoomRequest(settings, true));
-                    Debug.Log("new room " + username + "- Room");
-				}
-			}
-		GUILayout.EndArea();
-	}
-	
-	private void DrawChatGUI(){
-		GUI.Box(new Rect(10, 80, 470, 390), "Chat");
+        GUILayout.BeginArea(screenPos);
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.BeginVertical();
+        GUILayout.Label("Users");
+        userScrollPosition = GUILayout.BeginScrollView(userScrollPosition, false, true, GUILayout.Width(screenPos.width));
+        GUILayout.BeginVertical();
+        List<User> userList = currentActiveRoom.UserList;
+        foreach (User user in userList)
+        {
+            GUILayout.Label(user.Name);
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndScrollView();
+        GUILayout.BeginHorizontal();
+        // Logout button
+        if (GUILayout.Button("Logout"))
+        {
+            smartFox.Send(new LogoutRequest());
+        }
+        // Game Room button
+        if (currentActiveRoom.Name == "The Lobby")
+        {
+            if (GUILayout.Button("Make Game"))
+            {
 
-		GUILayout.BeginArea (new Rect(20, 110, 450, 350));
-			chatScrollPosition = GUILayout.BeginScrollView (chatScrollPosition, GUILayout.Width (450), GUILayout.Height (350));
-				GUILayout.BeginVertical();
-					foreach (string message in messages) {
-						//this displays text from messages arraylist in the chat window
-						GUILayout.Label(message);
-				}
-				GUILayout.EndVertical();
-			GUILayout.EndScrollView ();
-		GUILayout.EndArea();		
-	}
+                // ****** Create new room ******* //
+
+
+                //let smartfox take care of error if duplicate name
+                RoomSettings settings = new RoomSettings(username + " - Room");
+                // how many players allowed
+                settings.MaxUsers = 5;
+                //settings.GroupId = "create";
+                //settings.IsGame = true;
+
+                List<RoomVariable> roomVariables = new List<RoomVariable>();
+                roomVariables.Add(new SFSRoomVariable("host", username));
+                roomVariables.Add(new SFSRoomVariable("gameStarted", false));
+
+                // set up arrays of colors 
+                SFSArray nums = new SFSArray();
+                for (int i = 0; i < 5; i++)
+                {
+                    nums.AddInt(i);
+                }
+
+                roomVariables.Add(new SFSRoomVariable("colorNums", nums));
+                settings.Variables = roomVariables;
+
+                smartFox.Send(new CreateRoomRequest(settings, true));
+                Debug.Log("new room " + username + "- Room");
+            }
+        }
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    private void DrawRoomsGUI(Rect screenPos)
+    {
+        roomSelection = -1;
+
+        GUILayout.BeginArea(screenPos);
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.Label("Rooms");
+        if (smartFox.RoomList.Count >= 1)
+        {
+            roomScrollPosition = GUILayout.BeginScrollView(roomScrollPosition, GUILayout.Width(screenPos.width));
+            roomSelection = GUILayout.SelectionGrid(roomSelection, roomFullStrings, 1, "RoomListButton");
+
+            if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
+            {
+                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection]));
+            }
+            GUILayout.EndScrollView();
+
+        }
+        else
+        {
+            GUILayout.Label("No rooms available to join");
+        }
+        GUILayout.EndArea();
+
+
+        GUI.Box(new Rect(screenW - 200, 260, 180, 130), "Room List");
+        GUILayout.BeginArea(new Rect(screenW - 190, 290, 180, 150));
+        if (smartFox.RoomList.Count >= 1)
+        {
+            roomScrollPosition = GUILayout.BeginScrollView(roomScrollPosition, GUILayout.Width(180), GUILayout.Height(130));
+            roomSelection = GUILayout.SelectionGrid(roomSelection, roomFullStrings, 1, "RoomListButton");
+
+            if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
+            {
+                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection]));
+            }
+            GUILayout.EndScrollView();
+
+        }
+        else
+        {
+            GUILayout.Label("No rooms available to join");
+        }
+        GUILayout.EndArea();
+    }
+
+    private void DrawChatGUI(Rect screenPos)
+    {
+        GUILayout.BeginArea(screenPos);
+
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.BeginVertical();
+        chatScrollPosition = GUILayout.BeginScrollView(chatScrollPosition, false, true, GUILayout.Width(screenPos.width));
+        GUILayout.BeginVertical();
+        foreach (string message in messages)
+        {
+            GUILayout.Label(message);
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndScrollView();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Send", GUILayout.MinWidth(50), GUILayout.MaxWidth(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
+        {
+            smartFox.Send(new PublicMessageRequest(newMessage));
+            newMessage = "";
+        }
+        newMessage = GUILayout.TextField(newMessage, 420);
+
+
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
 	
 	
 	
