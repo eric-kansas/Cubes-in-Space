@@ -153,7 +153,7 @@ public class Lobby : MonoBehaviour {
 	}
 	public void OnRoomCreationError(BaseEvent evt)
 	{
-		Debug.Log("Error creating room");
+		Debug.Log("Error creating room: " + evt.Params["message"]);
 	}
 	
 	public void OnJoinRoom(BaseEvent evt)
@@ -163,14 +163,15 @@ public class Lobby : MonoBehaviour {
 		Debug.Log("joined "+room.Name);
 		if(room.Name=="The Lobby" )
 			Application.LoadLevel(room.Name);
-        else if (room.IsGame)
+        /*else if (room.IsGame)
         {
             Application.LoadLevel("testScene");
-        }else
+        }*/
+		else
         {
             if (username.Equals(room.GetVariable("host").GetStringValue()))
             {
-                Debug.Log("YES IM THE HOST WOOT!!");
+                //Debug.Log("YES IM THE HOST WOOT!!");
                 GameValues.isHost = true;
             }
             else
@@ -180,7 +181,7 @@ public class Lobby : MonoBehaviour {
             }
             GameValues.colorIndex = GetColorNumber(smartFox.MySelf);
             Application.LoadLevel("Game Lobby");
-            Debug.Log("WHWHOWHWOHWOHOWHWOHWO::::: " + GameValues.colorIndex); 
+            //Debug.Log("WHWHOWHWOHWOHOWHWOHWO::::: " + GameValues.colorIndex); 
             //smartFox.Send(new SpectatorToPlayerRequest());
         }
 	}
@@ -365,6 +366,8 @@ public class Lobby : MonoBehaviour {
 			}
 			
 			// Game Room button
+			//	this button will create and initialize a room settings room
+			//	only the host can start the game
 			if (currentActiveRoom.Name == "The Lobby"){
 				if (GUI.Button (new Rect (80, 110, 85, 24), "Make Game")) {		
 
@@ -372,24 +375,27 @@ public class Lobby : MonoBehaviour {
 					
 					
 					//let smartfox take care of error if duplicate name
-					RoomSettings settings = new RoomSettings(username + " - Room");
+					RoomSettings settings = new RoomSettings(username + " - Pregame Lobby");
 					// how many players allowed
-					settings.MaxUsers = 5;
+					settings.MaxUsers = 12;
                     //settings.GroupId = "create";
 					//settings.IsGame = true;
-
+						
+				
+					//set up all the necessary room variables
                     List<RoomVariable> roomVariables = new List<RoomVariable>();
                     roomVariables.Add(new SFSRoomVariable("host", username));
                     roomVariables.Add(new SFSRoomVariable("gameStarted", false));
 
                     // set up arrays of colors 
                     SFSArray nums = new SFSArray();
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < settings.MaxUsers; i++)
                     {
                         nums.AddInt(i);
+						//use these numbers as the player's id to the server
                     }
 
-                    roomVariables.Add(new SFSRoomVariable("colorNums", nums));
+                    roomVariables.Add(new SFSRoomVariable("colorNums", nums)); //make this work with team colors
                     settings.Variables = roomVariables;
 					
 					smartFox.Send(new CreateRoomRequest(settings, true));

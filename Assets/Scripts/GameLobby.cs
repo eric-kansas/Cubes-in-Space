@@ -96,7 +96,7 @@ public class GameLobby : MonoBehaviour
 
     public void OnRoomCreationError(BaseEvent evt)
     {
-        Debug.Log("Error creating room");
+        Debug.Log("Error creating room: " + evt.Params["message"]);
     }
 
     public void OnJoinRoom(BaseEvent evt)
@@ -107,7 +107,7 @@ public class GameLobby : MonoBehaviour
             Application.LoadLevel(room.Name);
         else if (room.IsGame)
         {
-            Debug.Log("is game!!!!");
+            //Debug.Log("is game!!!!");
             Application.LoadLevel("testScene");
         }
         else
