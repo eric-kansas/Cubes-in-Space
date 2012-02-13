@@ -23,7 +23,7 @@ public class Player : MonoBehaviour {
 	
 	
 	//movement variables
-	private float moveSpeed = .75f;
+	private float moveSpeed = 1.25f;
 	private Vector3 startPos;
 
     private MouseLook mouseLook;

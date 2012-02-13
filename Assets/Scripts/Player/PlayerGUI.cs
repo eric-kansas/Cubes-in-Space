@@ -18,6 +18,6 @@ public class PlayerGUI : MonoBehaviour {
 	
 	void OnGUI()
 	{
-		GUI.DrawTexture(new Rect(Screen.width/2 - crosshairSize/2, Screen.height/2 - crosshairSize/2, crosshairSize, crosshairSize), crosshair, ScaleMode.ScaleToFit);
+		GUI.DrawTexture(new Rect(Screen.width/2 - crosshairSize/2, Screen.height/2 - crosshairSize * .80f, crosshairSize, crosshairSize), crosshair, ScaleMode.ScaleToFit);
 	}
 }
