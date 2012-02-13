@@ -70,6 +70,9 @@ public class GameManager : MonoBehaviour {
             Debug.LogError("No GrandCube prefab assigned");
         if(GameValues.isHost)
             BuildCubes();
+		
+		// Lock the mouse to the center
+		Screen.lockCursor = true;
         
     }
 	

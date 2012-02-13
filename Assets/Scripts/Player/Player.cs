@@ -64,7 +64,7 @@ public class Player : MonoBehaviour {
         }
 
         //check for click on plane
-        if (Input.GetMouseButtonDown(0) && didHit)
+        if (Input.GetMouseButtonDown(0) && didHit && !isFlying)
         {
             //our target is where we clicked
             targetPosition = hit.point;
@@ -104,7 +104,7 @@ public class Player : MonoBehaviour {
 				
 				//slow these down somehow
 				transform.forward = normal; 
-				mouseLook.lookingDir = transform.localEulerAngles;
+				mouseLook.setLookingDir(transform.localEulerAngles);
 				isFlying = false;
 	            //Camera.main.ScreenPointToRay(-normal);
 	            //Debug.Log("normal: " + hit.normal);

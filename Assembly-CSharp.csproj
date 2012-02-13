@@ -5,7 +5,7 @@
 	<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 	<ProductVersion>9.0.21022</ProductVersion>
 	<SchemaVersion>2.0</SchemaVersion>
-	<ProjectGuid>{74612560-8D5C-784A-3684-8BF969B69552}</ProjectGuid>
+	<ProjectGuid>{27B5F53F-6DD7-3F43-09ED-EC5236E5C8E9}</ProjectGuid>
 	<OutputType>Library</OutputType>
 	<AppDesignerFolder>Properties</AppDesignerFolder>
 	<RootNamespace></RootNamespace>
@@ -50,26 +50,29 @@
      <Compile Include="Assets\Scripts\GameLobby.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
      <Compile Include="Assets\Scripts\GameValues.cs" />
-     <Compile Include="Assets\Scripts\LaunchPacket.cs" />
      <Compile Include="Assets\Scripts\Lobby.cs" />
      <Compile Include="Assets\Scripts\MouseLook.cs" />
-     <Compile Include="Assets\Scripts\NetworkLaunchMessageReceiver.cs" />
-     <Compile Include="Assets\Scripts\NetworkLaunchMessageSender.cs" />
-     <Compile Include="Assets\Scripts\Player.cs" />
-     <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
-     <Compile Include="Assets\Scripts\TimeManager.cs" />
+     <Compile Include="Assets\Scripts\Networking\LaunchPacket.cs" />
+     <Compile Include="Assets\Scripts\Networking\NetworkLaunchMessageReceiver.cs" />
+     <Compile Include="Assets\Scripts\Networking\NetworkLaunchMessageSender.cs" />
+     <Compile Include="Assets\Scripts\Networking\SmartFoxConnection.cs" />
+     <Compile Include="Assets\Scripts\Networking\TimeManager.cs" />
+     <Compile Include="Assets\Scripts\Player\Player.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerGUI.cs" />
+     <None Include="Assets\art\Crosshairs\Readme.txt" />
      <None Include="Assets\Standard Assets\Skyboxes\skybox info.txt" />
+     <None Include="Assets\art\Crosshairs\License.txt" />
  <Reference Include="SmartFox2">
  <HintPath>Assets\Plugins\SmartFox2.dll</HintPath>
  </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Assembly-CSharp-firstpass.csproj">
-      <Project>{89365CEC-9167-E576-5747-EA39E3565900}</Project>
+      <Project>{834C4B6E-920C-6E8E-435F-E70C33558AD8}</Project>
       <Name>Assembly-CSharp-firstpass</Name>
     </ProjectReference>
     <ProjectReference Include="Assembly-UnityScript-firstpass.unityproj">
-      <Project>{0BE7A163-2BFB-1F63-ABB1-B8864B539B76}</Project>
+      <Project>{0C49316C-FC47-43AB-CD47-1E7DFCD02256}</Project>
       <Name>Assembly-UnityScript-firstpass</Name>
     </ProjectReference>
   </ItemGroup>
