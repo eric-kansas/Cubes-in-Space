@@ -19,19 +19,25 @@ public class Player : MonoBehaviour {
 
     public GUIText guiText;
 	
-	private bool isFlying = false;
+	public bool isFlying = false;
 	
 	
 	//movement variables
-	private float moveSpeed = 1.25f;
+	private float moveSpeed = 60.00f;
 	private Vector3 startPos;
 
     private MouseLook mouseLook;
+    private SmoothFollowCS mouseFollow;
 
 	// Use this for initialization
 	void Start () {
         guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
         mouseLook = Camera.mainCamera.GetComponent<MouseLook>();
+        mouseFollow = Camera.mainCamera.GetComponent<SmoothFollowCS>();
+        //set camera
+        mouseFollow.enabled = false;
+        mouseFollow.target = gameObject.transform;
+        mouseFollow.targetLocation = gameObject.transform.position;
 		sender = GetComponent<NetworkLaunchMessageSender>();
 	}
 
@@ -71,6 +77,13 @@ public class Player : MonoBehaviour {
             normal = hit.normal;
             targetObjectSide = hit.transform.gameObject; //the side of the cube we hit
 			isFlying = true;
+
+            mouseLook.enabled = false;
+            mouseFollow.enabled = true;
+            mouseFollow.startLocation = gameObject.transform.position;
+            mouseFollow.targetLocation = targetPosition;
+            mouseFollow.targetNormal = hit.normal;
+            mouseFollow.reset();
 			
             //*********SEND DATA ABOUT CLICK***********//	
             LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp);
@@ -86,7 +99,7 @@ public class Player : MonoBehaviour {
 			if (distance >= 5)
 			{
 				//move towards the target slowly
-				transform.position += (distanceVector.normalized * moveSpeed);
+				transform.position += (distanceVector.normalized * moveSpeed * Time.deltaTime);
 				//player.transform.position = Vector3.Lerp(player.transform.position, targetPosition, Time.deltaTime * moveSpeed);
 			}
 			else
@@ -106,9 +119,21 @@ public class Player : MonoBehaviour {
 				transform.forward = normal; 
 				mouseLook.lookingDir = transform.localEulerAngles;
 				isFlying = false;
+
+                //set camera
+
+                StartCoroutine(SwitchCamera(1));
+                
 	            //Camera.main.ScreenPointToRay(-normal);
 	            //Debug.Log("normal: " + hit.normal);
 			}
 		}
+    }
+
+    IEnumerator SwitchCamera(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        mouseLook.enabled = true;
+        mouseFollow.enabled = false;
     }
 }

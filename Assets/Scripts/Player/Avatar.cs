@@ -6,8 +6,14 @@ using System.Collections;
 /// SCRIPT FOR ALL NETWORKED CHARACTERS THAT ARE NOT THE PLAYER
 /// </summary>
 public class Avatar : MonoBehaviour {
-	
-	public Vector3 targetPosition;
+
+    private Vector3 targetPosition;
+
+    public Vector3 TargetPosition
+    {
+        get { return targetPosition; }
+        set { targetPosition = value; }
+    }
 	public Color color;
 	public float lag; //ping
 	public float moveSpeed = 1.25f;
@@ -18,10 +24,17 @@ public class Avatar : MonoBehaviour {
 	void Start () 
 	{
 	}
+
+    public void launchLag(double deltaTime)
+    {
+        Vector3 distanceVector = targetPosition - transform.position;
+        transform.position += (distanceVector.normalized * moveSpeed);
+    }
 	
 	void init(Vector3 spawnPos, Color playerColor)
 	{
 		transform.position = spawnPos;
+        targetPosition = spawnPos;
 		color = playerColor;
 	}
 	
@@ -37,9 +50,8 @@ public class Avatar : MonoBehaviour {
 		else
 		{
 			//Debug.Log("\tMoving. Current Position = " + transform.position);
-			//move towards the target position
 			Vector3 distanceVector = targetPosition - transform.position;
-			transform.position += (distanceVector.normalized * moveSpeed);
+			transform.position += (distanceVector.normalized * moveSpeed * Time.deltaTime);
 		}
 	}
 }

@@ -58,6 +58,7 @@
      <Compile Include="Assets\Scripts\Player\Player.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerGUI.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
+     <Compile Include="Assets\Scripts\SmoothFollowCS.cs" />
      <Compile Include="Assets\Scripts\SpawnPoint.cs" />
      <Compile Include="Assets\Scripts\TimeManager.cs" />
      <None Include="Assets\art\Crosshairs\Readme.txt" />

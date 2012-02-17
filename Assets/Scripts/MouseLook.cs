@@ -28,7 +28,7 @@ public class MouseLook : MonoBehaviour {
 	public float minimumY = -Mathf.PI/4;
 	public float maximumY = Mathf.PI/4;
 	
-	public GameObject player;
+	public Player player;
 
     public Vector3 lookingDir = new Vector3(0, 0, 0);
     public Vector3 lookingDirV = new Vector3(0, 0, 0);
@@ -48,7 +48,14 @@ public class MouseLook : MonoBehaviour {
 		{
 			//keep the camera's position relative to the player's
 			//change this is you want the camera to not be inside of the player
-			transform.position = player.transform.position;
+            if (player.isFlying)
+            {
+                transform.position = player.transform.position - (player.transform.position.normalized * -5);
+            }
+            else
+            {
+                transform.position = player.transform.position;
+            }
 			
 			if (axes == RotationAxes.MouseXAndY)
 			{
@@ -68,19 +75,7 @@ public class MouseLook : MonoBehaviour {
 				Quaternion initialOrientation = Quaternion.Euler(lookingDir);
 				transform.rotation = initialOrientation * currentRotation;
 	
-				//======================================================
-				// Old way, doesn't work because it is based off of Global axes
-				/*
-	            rotationX = localTransfrom.y + Input.GetAxis("Mouse X") * sensitivityX;
-	            rotationX = Mathf.Clamp(rotationX, lookingDir.y + minimumX, lookingDir.y + maximumX);
-				
-				
-				rotationY = localTransfrom.x + Input.GetAxis("Mouse Y") * sensitivityY * -1;			
-	            rotationY = Mathf.Clamp(rotationY, lookingDir.x + minimumY, lookingDir.x + maximumY);
-	
-	            localTransfrom = new Vector3(rotationY, rotationX, 0);
-	            transform.localEulerAngles = new Vector3(rotationY, rotationX, 0);
-	            */
+
 			}
 			else if (axes == RotationAxes.MouseX)
 			{
@@ -102,7 +97,7 @@ public class MouseLook : MonoBehaviour {
 		if (rigidbody)
 			rigidbody.freezeRotation = true;
 	}
-	public void init(GameObject playerChar)
+	public void init(Player playerChar)
 	{
 		// find the GO tagged player, the player the camera will follow
 		player = playerChar;

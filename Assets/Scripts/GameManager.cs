@@ -48,6 +48,7 @@ public class GameManager : MonoBehaviour {
     }
 
     private static GameManager instance;
+    private bool worldLoaded = false;
     public static GameManager Instance
     {
         get { return instance; }
@@ -195,20 +196,19 @@ public class GameManager : MonoBehaviour {
 			Debug.Log("Player looking at: " + cha.transform.forward);
 			myAvatar = cha;
 			// now that we have the player, give it to the MouseLook script
-			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar);
+			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
 			
 			//give him a color
 			myAvatar.GetComponent<Player>().color = colors[whichColor];
         }
         else
         {
-			//not me, so make a character somewhere else
-			int numPeopleInRoom = smartFox.LastJoinedRoom.UserList.Count;
-
             whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue();
-            cha = Instantiate(avatarPF, positions[whichColor], Quaternion.LookRotation(-positions[whichColor])) as GameObject;
+            int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
+            cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
             otherClients.Add(user.Name, cha); //update the dictionary of the other players
 			cha.GetComponent<Avatar>().color = colors[whichColor];
+            cha.GetComponent<Avatar>().TargetPosition = positions[whichPos];
         }
 
         Character ch = cha.GetComponent<Character>();
@@ -218,46 +218,6 @@ public class GameManager : MonoBehaviour {
 		
 		//look at the center of the arena and get ready to go
 		//ch.transform.LookAt(new Vector3(0,0,0));
-    }
-
-    private int GetColorNumber(User user)
-    {
-        int colorNum = -1;
-
-        if (user.IsItMe)
-        {
-
-            //assign a new color
-            //first get a copy of available numbers, which is a room variable
-            SFSArray numbers = (SFSArray)currentRoom.GetVariable("colorNums").GetSFSArrayValue();
-            int ran = UnityEngine.Random.Range(0, numbers.Size() - 1);
-            colorNum = numbers.GetInt(ran);
-
-            //update room variable 
-            numbers.RemoveElementAt(ran);
-            //send back to store on server
-            List<RoomVariable> rData = new List<RoomVariable>();
-            rData.Add(new SFSRoomVariable("colorNums", numbers));
-            smartFox.Send(new SetRoomVariablesRequest(rData));
-
-            //store my own color on server as user data
-            List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("colorIndex", colorNum));
-            smartFox.Send(new SetUserVariablesRequest(uData));
-
-        }
-        else
-        {
-            try
-            {
-                colorNum = (int)user.GetVariable("colorIndex").GetIntValue();
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("error in else of getColorNumber " + ex.ToString());
-            }
-        }
-        return colorNum;
     }
 
     void SetupListeners()
@@ -381,7 +341,7 @@ public class GameManager : MonoBehaviour {
                 }
             }
             // Check if map has been uploaded
-            if (changedVars.Contains("cubesInSpace"))
+            if (changedVars.Contains("cubesInSpace") && !worldLoaded)
             {
                 Debug.Log("ROOM cubesInSpace");
                 cubePosList = new List<Vector3>();
@@ -402,7 +362,6 @@ public class GameManager : MonoBehaviour {
                     cubeRotList.Add(rot);
 
                 }
-
                 loadWorld();
             }
         }
@@ -411,10 +370,13 @@ public class GameManager : MonoBehaviour {
 
     private void loadWorld()
     {
-        cubeList = new List<GameObject>();
-        for (int i = 0; i < cubePosList.Count; i++)
-        {
-            cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i])));
+        if(!worldLoaded){
+            cubeList = new List<GameObject>();
+            for (int i = 0; i < cubePosList.Count; i++)
+            {
+                cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i])));
+            }
+            worldLoaded = true;
         }
     }
 

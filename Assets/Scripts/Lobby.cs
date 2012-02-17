@@ -230,7 +230,7 @@ public class Lobby : MonoBehaviour {
 
             //store my own color on server as user data
             List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("playerIDs", playerID));
+            uData.Add(new SFSUserVariable("playerID", playerID));
             smartFox.Send(new SetUserVariablesRequest(uData));
 
         }

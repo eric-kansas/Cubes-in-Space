@@ -144,6 +144,7 @@ public class GameLobby : MonoBehaviour
                 {
                     Debug.Log("Game started");
                     String[] nameParts = this.currentActiveRoom.Name.Split('-');
+                    Debug.Log(nameParts[0] + " - Game");
                     smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game"));
                 }
                 else
