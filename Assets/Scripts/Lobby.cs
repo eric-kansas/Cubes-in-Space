@@ -15,7 +15,7 @@ using Sfs2X.Logging;
 public class Lobby : MonoBehaviour {
 
 	private SmartFox smartFox;
-	private string zone = "SimpleChat";
+	private string zone = "EMH"; //log onto "EMH"
 	private string serverName = "129.21.29.6";
 	private int serverPort = 9933;
 	public string username = "";
@@ -37,6 +37,9 @@ public class Lobby : MonoBehaviour {
 	private string[] roomNameStrings; //Names of rooms
 	private string[] roomFullStrings; //Names and descriptions
 	private int screenW;
+
+    private int maxPlayers = 12;
+    private int numTeams = 4;
 	
 	void Start()
 	{
@@ -161,56 +164,73 @@ public class Lobby : MonoBehaviour {
 	{
 		Room room = (Room)evt.Params["room"];
 		currentActiveRoom = room;
-		Debug.Log("joined "+room.Name);
-		if(room.Name=="The Lobby" )
-			Application.LoadLevel(room.Name);
-        /*else if (room.IsGame)
+		Debug.Log("Lobby- OnJoinRoom: joined " + room.Name);
+        Debug.Log("\t-username: " + username);
+        Debug.Log("\t-host: " + room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host"));
+        if (room.Name == "The Lobby")
         {
-            Application.LoadLevel("testScene");
-        }*/
-		else
+            Debug.Log("\t-Loading up the lobby");
+            Application.LoadLevel(room.Name);
+        }
+        else
         {
-            if (username.Equals(room.GetVariable("host").GetStringValue()))
+            Debug.Log("\t-Loading the Game Lobby");
+            if (username.Equals(room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host")))
             {
-                //Debug.Log("YES IM THE HOST WOOT!!");
+                Debug.Log("\t-YES IM THE HOST WOOT!!");
                 GameValues.isHost = true;
             }
             else
             {
-                Debug.Log("not the host");
+                Debug.Log("\t-not the host");
                 GameValues.isHost = false;
             }
-            GameValues.colorIndex = GetColorNumber(smartFox.MySelf);
+
+            //get player id
+            GameValues.playerID = GetPlayerID(smartFox.MySelf);
             Application.LoadLevel("Game Lobby");
-            //Debug.Log("WHWHOWHWOHWOHOWHWOHWO::::: " + GameValues.colorIndex); 
-            //smartFox.Send(new SpectatorToPlayerRequest());
+            
+            //pick the team to join
+            GameValues.teamNum = (int)(GameValues.playerID / (maxPlayers / numTeams));
+            //store my own color on server as user data
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
         }
+
+        Debug.Log("\t-end OnJoinRoom funtion");
 	}
 
-    private int GetColorNumber(User user)
+    private int GetPlayerID(User user)
     {
-        int colorNum = -1;
+        int playerID = -1;
+
+        Debug.Log("GetPlayerID function: Is the user me? " + user.IsItMe);
 
         if (user.IsItMe)
         {
 
             //assign a new color
             //first get a copy of available numbers, which is a room variable
-            SFSArray numbers = (SFSArray)currentActiveRoom.GetVariable("colorNums").GetSFSArrayValue();
-            Debug.Log("ya :" + numbers.Size());
-            int ran = UnityEngine.Random.Range(0, numbers.Size() - 1);
-            colorNum = numbers.GetInt(ran);
+            //Debug.Log("\t-Getting gameInfo");
+            SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
+            //Debug.Log("\t-Getting the ids that are left");
+            SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
+            //Debug.Log("ya :" + idsLeft.Size());
+            int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
+            playerID = idsLeft.GetInt(ran);
 
             //update room variable 
-            numbers.RemoveElementAt(ran);
+            idsLeft.RemoveElementAt(ran);
             //send back to store on server
             List<RoomVariable> rData = new List<RoomVariable>();
-            rData.Add(new SFSRoomVariable("colorNums", numbers));
+            gameInfo.PutSFSArray("playerIDs", idsLeft);
+            rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
             smartFox.Send(new SetRoomVariablesRequest(rData));
 
             //store my own color on server as user data
             List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("colorIndex", colorNum));
+            uData.Add(new SFSUserVariable("playerIDs", playerID));
             smartFox.Send(new SetUserVariablesRequest(uData));
 
         }
@@ -218,14 +238,14 @@ public class Lobby : MonoBehaviour {
         {
             try
             {
-                colorNum = (int)user.GetVariable("colorIndex").GetIntValue();
+                playerID = (int)user.GetVariable("playerIDs").GetIntValue();
             }
             catch (Exception ex)
             {
-                Debug.Log("error in else of getColorNumber " + ex.ToString());
+                Debug.Log("error in else of playerIDs " + ex.ToString());
             }
         }
-        return colorNum;
+        return playerID;
     }
 	
 	public void OnUserEnterRoom(BaseEvent evt) {
@@ -276,6 +296,10 @@ public class Lobby : MonoBehaviour {
 		screenW = Screen.width;
         if (gSkin)
 		    GUI.skin = gSkin;
+        //else
+        //{
+        //    Debug.Log("NO GUI!");
+        //}
 				
 		// Login
 		if (!isLoggedIn) {
@@ -364,30 +388,60 @@ public class Lobby : MonoBehaviour {
             {
 
                 // ****** Create new room ******* //
-
+                int gameLength = 120; //time in seconds
 
                 //let smartfox take care of error if duplicate name
                 RoomSettings settings = new RoomSettings(username + " - Room");
                 // how many players allowed
-                settings.MaxUsers = 5;
+                settings.MaxUsers = (short)maxPlayers;
                 //settings.GroupId = "create";
                 //settings.IsGame = true;
 
                 List<RoomVariable> roomVariables = new List<RoomVariable>();
-                roomVariables.Add(new SFSRoomVariable("host", username));
-                roomVariables.Add(new SFSRoomVariable("gameStarted", false));
-
+                //roomVariables.Add(new SFSRoomVariable("host", username));
+                roomVariables.Add(new SFSRoomVariable("gameStarted", false));   //a game started bool
                 // set up arrays of colors 
-                SFSArray nums = new SFSArray();
-                for (int i = 0; i < 5; i++)
+                //SFSArray nums = new SFSArray();
+                //for (int i = 0; i < 5; i++)
+                //{
+                //    nums.AddInt(i);
+                //}
+                //roomVariables.Add(new SFSRoomVariable("colorNums", nums));
+
+                
+
+                SFSObject gameInfo = new SFSObject();
+                gameInfo.PutUtfString("host", username);                        //the host
+                SFSArray playerIDs = new SFSArray(); //[maxPlayers];
+                for (int i = 0; i < maxPlayers; i++)
                 {
-                    nums.AddInt(i);
+                    playerIDs.AddInt(i);
                 }
 
-                roomVariables.Add(new SFSRoomVariable("colorNums", nums));
-                settings.Variables = roomVariables;
+                gameInfo.PutSFSArray("playerIDs", playerIDs);                   //the player IDs
+                gameInfo.PutInt("numTeams", numTeams);                          //the number of teams
 
-                smartFox.Send(new CreateRoomRequest(settings, true));
+                SFSArray teams = new SFSArray();
+                int counter = 0;
+                int[] teamPlayerIndices;
+                for (int i = 0; i < numTeams; i++)
+                {
+                    teamPlayerIndices = new int[maxPlayers / numTeams];
+                    for (int j = 0; j < maxPlayers / numTeams; j++)             //j < (12 / 4)  maxPlayers / numTeams
+                    {                                                           //team 0: 0, 1, 2
+                        teamPlayerIndices[j] = counter;                         //team 1: 3, 4, 5
+                        counter++;                                              //team 2: 6, 7, 8
+                    }                                                           //team 3: 9, 10, 11
+                    teams.AddIntArray(teamPlayerIndices);
+                }
+                gameInfo.PutSFSArray("teams", teams);                           //an array of possible values to be grabbed
+                gameInfo.PutInt("gameLength", gameLength);                      //the length of the game
+
+                roomVariables.Add(new SFSRoomVariable("gameInfo", gameInfo));
+
+
+                settings.Variables = roomVariables;
+                smartFox.Send(new CreateRoomRequest(settings, true));           // Contains: maxUsers, and roomVariables
                 Debug.Log("new room " + username + "- Room");
             }
         }

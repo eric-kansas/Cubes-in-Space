@@ -187,7 +187,7 @@ public class GameManager : MonoBehaviour {
         GameObject cha;
         if (user.IsItMe)
         {
-            whichColor = GameValues.colorIndex;
+            whichColor = GameValues.teamNum;
             if (whichColor == -1)
                 Debug.Log("-1 fault in color picker");
             //cha = Instantiate(characterPF, positions[whichColor], Quaternion.identity) as GameObject;
@@ -198,17 +198,14 @@ public class GameManager : MonoBehaviour {
 			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar);
 			
 			//give him a color
-			int numPeopleInRoom = smartFox.LastJoinedRoom.UserList.Count;
-        	whichColor = numPeopleInRoom - 1;
 			myAvatar.GetComponent<Player>().color = colors[whichColor];
         }
         else
         {
 			//not me, so make a character somewhere else
 			int numPeopleInRoom = smartFox.LastJoinedRoom.UserList.Count;
-        	whichColor = numPeopleInRoom - 1;
-			
-            Debug.Log("here in thing: " + whichColor);
+
+            whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue();
             cha = Instantiate(avatarPF, positions[whichColor], Quaternion.LookRotation(-positions[whichColor])) as GameObject;
             otherClients.Add(user.Name, cha); //update the dictionary of the other players
 			cha.GetComponent<Avatar>().color = colors[whichColor];
