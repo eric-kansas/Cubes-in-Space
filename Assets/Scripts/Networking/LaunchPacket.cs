@@ -8,9 +8,12 @@ using Sfs2X.Entities.Data;
 public class LaunchPacket
 {
     private string type = "LAUNCH";
+    private int cubeID = -1;
+    private int sideID = -1;
     private Vector3 launchPosition; // Position as Vector3
     private Vector3 launchDestination; // Position as Vector3
     private double localGameTime; //current game time that event happened
+    private double gameTimeETA;
     //private double localLatency; //my average latency to the server at that time 
 
     public LaunchPacket()
@@ -18,8 +21,13 @@ public class LaunchPacket
 
     }
 
-    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime)
+    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double eta, int cubeID = -1, int sideID = -1)
     {
+        //side hit
+        this.cubeID = cubeID;
+
+        //side hit
+        this.sideID = sideID;
 
         // Launch Position
         this.launchPosition = pos;
@@ -29,6 +37,9 @@ public class LaunchPacket
 
         //Local Game Time
         this.localGameTime = gameTime;
+
+        // local game time of arrival
+        this.gameTimeETA = eta;
     }
 
 	// Check if this transform is different from given one with specified accuracy
@@ -44,7 +55,13 @@ public class LaunchPacket
     {
         //Message type
         this.type = launchMessage.type;
-        
+
+        //cube hit id
+        this.sideID = launchMessage.cubeID;
+
+        //side hit id
+        this.sideID = launchMessage.sideID;
+
         // Launch Position
         this.launchPosition = launchMessage.launchPosition;
        
@@ -53,6 +70,9 @@ public class LaunchPacket
 
         //Local Game Time
         this.localGameTime = launchMessage.localGameTime;
+
+        //Local Game Time
+        this.gameTimeETA = launchMessage.gameTimeETA;
 	}
 	
 	// Copy the Unity transform to itself
@@ -81,6 +101,12 @@ public class LaunchPacket
         //Message
         launchMessage.PutUtfString("messageType", type);
 
+        //side hit id
+        launchMessage.PutInt("cubeID", cubeID);
+
+        //side hit id
+        launchMessage.PutInt("sideID", sideID);
+
         // Launch Position
         launchMessage.PutFloat("sx", this.launchPosition.x);
         launchMessage.PutFloat("sy", this.launchPosition.y);
@@ -94,6 +120,9 @@ public class LaunchPacket
         //Local Game Time
         launchMessage.PutDouble("localGameTime", this.localGameTime);
 
+        //Local Game Time
+        launchMessage.PutDouble("gameTimeETA", this.gameTimeETA);
+
         data.PutSFSObject("launchMessage", launchMessage);
 		
 		return data;
@@ -104,10 +133,15 @@ public class LaunchPacket
     {
         LaunchPacket launchMessage = new LaunchPacket();
 
-        
         ISFSObject launchData = data.GetSFSObject("launchMessage");
         
         launchMessage.type = launchData.GetUtfString("messageType");
+
+        //cube hit id
+        launchMessage.cubeID = launchData.GetInt("cubeID");
+
+        //side hit id
+        launchMessage.sideID = launchData.GetInt("sideID");
 
         //get launch pos
         float sx = launchData.GetFloat("sx");
@@ -127,6 +161,9 @@ public class LaunchPacket
 
         //get & set senders local game time
         launchMessage.localGameTime = launchData.GetDouble("localGameTime");
+
+        //get & set senders local game time
+        launchMessage.gameTimeETA = launchData.GetDouble("gameTimeETA");
 
         return launchMessage;
 	}
@@ -159,6 +196,22 @@ public class LaunchPacket
         }
     }
 
+    public int CubeID
+    {
+        get
+        {
+            return cubeID;
+        }
+    }
+
+    public int SideID
+    {
+        get
+        {
+            return sideID;
+        }
+    }
+
     public Vector3 LaunchPosition
     {
         get
@@ -180,6 +233,14 @@ public class LaunchPacket
         get
         {
             return localGameTime;
+        }
+    }
+
+    public double GameTimeETA
+    {
+        get
+        {
+            return gameTimeETA;
         }
     }
 }

@@ -11,9 +11,12 @@ public class NetworkLaunchMessageReceiver : MonoBehaviour {
 
 		Avatar avatarScript = this.GetComponent<Avatar>();
         double deltaTime = launchMessage.LocalGameTime - TimeManager.Instance.ClientTimeStamp;
-        Debug.Log("here in launch data: delta time: " + deltaTime);
+        Debug.Log("CubeID: " + launchMessage.CubeID);
+        Debug.Log("SideID: " + launchMessage.SideID);
 		avatarScript.TargetPosition = launchMessage.LaunchDestination;
-		
+        GameObject side = GameManager.Instance.GetSide(launchMessage.CubeID, launchMessage.SideID);
+        side.GetComponent<Side>().TakeSide(launchMessage, avatarScript.team);
+
         //Debug.Log(this.transform.position)		this.transform.LookAt(launchMessage.LaunchDestination);
 
 	}

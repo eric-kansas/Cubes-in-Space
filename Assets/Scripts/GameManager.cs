@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour {
     private List<GameObject> cubeList;
 
     private Dictionary<string, GameObject> otherClients;
-    private List<Color> colors;
+    private List<Color> colors = new List<Color>() { Color.red, Color.magenta, Color.yellow, Color.green, Color.blue, Color.cyan };
     private List<Vector3> positions;
 
     private GameObject myAvatar;
@@ -61,13 +61,12 @@ public class GameManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+
+        cubeList = new List<GameObject>();
         SetupTheFox();
 
         TimeManager.Instance.Init();
-        
-        cubeList = new List<GameObject>();
-				
+        	
         if (!GrandCube)
             Debug.LogError("No GrandCube prefab assigned");
         if (GameValues.isHost)
@@ -80,6 +79,8 @@ public class GameManager : MonoBehaviour {
 		
 		// Lock the mouse to the center
 		Screen.lockCursor = true;
+
+        
     }
 	
 	// Update is called once per frame
@@ -110,8 +111,6 @@ public class GameManager : MonoBehaviour {
         currentRoom = smartFox.LastJoinedRoom;
         clientName = smartFox.MySelf.Name;
 
-        // set up arrays of colors 
-        colors = new List<Color>() { Color.red, Color.magenta, Color.yellow, Color.green, Color.blue, Color.cyan };
 		//make sure this matches the game lobby list
 		
 
@@ -208,6 +207,7 @@ public class GameManager : MonoBehaviour {
             cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
             otherClients.Add(user.Name, cha); //update the dictionary of the other players
 			cha.GetComponent<Avatar>().color = colors[whichColor];
+            cha.GetComponent<Avatar>().team = whichColor;
             cha.GetComponent<Avatar>().TargetPosition = positions[whichPos];
         }
 
@@ -374,9 +374,12 @@ public class GameManager : MonoBehaviour {
             cubeList = new List<GameObject>();
             for (int i = 0; i < cubePosList.Count; i++)
             {
-                cubeList.Add((GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i])));
+                GameObject holderCube = (GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i]));
+                holderCube.GetComponent<Cube>().id = i;
+                cubeList.Add(holderCube);
             }
             worldLoaded = true;
+            Debug.Log("Cubelist:  " + cubeList.Count);
         }
     }
 
@@ -429,13 +432,17 @@ public class GameManager : MonoBehaviour {
                                           );
 			
 			//add the newly created cube to the cubeList
-			cubeList.Add((GameObject) Instantiate(GrandCube, randPos, Quaternion.identity));
+            GameObject holderCube = (GameObject)Instantiate(GrandCube, randPos, Quaternion.identity);
+            holderCube.GetComponent<Cube>().id = i;
+            cubeList.Add(holderCube);
+
         }
 		//make sure everyone knows where those cubes are
     }
 
     private void BuildCubeLists()
     {
+        Debug.Log("here in building: " + cubeList.Count);
         for (int i = 0; i < cubeList.Count; i++)
         {
             cubePosList.Add(cubeList[i].transform.position);
@@ -453,7 +460,8 @@ public class GameManager : MonoBehaviour {
         {
             sfsObject = new SFSObject();
             sfsObject.PutInt("id", i);
-            sfsObject.PutIntArray("sides", new int[6]);
+            int[] sides= {-1,-1,-1,-1,-1,-1};
+            sfsObject.PutIntArray("sides", sides);
             sfsObject.PutFloat("x",cubePosList[i].x);
             sfsObject.PutFloat("y", cubePosList[i].y);
             sfsObject.PutFloat("z", cubePosList[i].z);
@@ -466,6 +474,13 @@ public class GameManager : MonoBehaviour {
         Debug.Log("sending room");
         roomVars.Add(new SFSRoomVariable("cubesInSpace", array));
         smartFox.Send(new SetRoomVariablesRequest(roomVars));
+    }
+
+    public GameObject GetSide(int cubeID, int sideID)
+    {
+        Debug.Log("IDS:  " + cubeID + ", " + sideID);
+        Debug.Log("Cubelist:  " + cubeList.Count);
+        return cubeList[cubeID].GetComponent<Cube>().Sides[sideID];
     }
 
 }

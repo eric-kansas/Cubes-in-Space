@@ -57,6 +57,7 @@
      <Compile Include="Assets\Scripts\Player\Character.cs" />
      <Compile Include="Assets\Scripts\Player\Player.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerGUI.cs" />
+     <Compile Include="Assets\Scripts\Side.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
      <Compile Include="Assets\Scripts\SmoothFollowCS.cs" />
      <Compile Include="Assets\Scripts\SpawnPoint.cs" />

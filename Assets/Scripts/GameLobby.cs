@@ -318,19 +318,8 @@ public class GameLobby : MonoBehaviour
                 //      -(int)      length of the game in seconds   key: "gameLength"
 
                 SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
+                //SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
                 settings.Variables.Add(gameInfo);
-
-                //store indices into color arrays for setting user colors, delete as used
-                /*
-                SFSArray nums = new SFSArray();
-                for (int i = 0; i < 5; i++)
-                {
-                    nums.AddInt(i);
-                }
-
-                SFSRoomVariable colorNums = new SFSRoomVariable("colorNums", nums);
-                settings.Variables.Add(colorNums);
-                */
 
                 //get the values from the appropriate fields to populate the gameInfo
 

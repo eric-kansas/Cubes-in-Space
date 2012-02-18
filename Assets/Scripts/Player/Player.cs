@@ -84,9 +84,37 @@ public class Player : MonoBehaviour {
             mouseFollow.targetLocation = targetPosition;
             mouseFollow.targetNormal = hit.normal;
             mouseFollow.reset();
-			
-            //*********SEND DATA ABOUT CLICK***********//	
-            LaunchPacket launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp);
+
+        
+            Vector3 holderPosition = transform.position;
+            Vector3 distanceVector = targetPosition - holderPosition;
+            int counter = 0;
+
+            while(distanceVector.magnitude >= 5)
+            {
+                holderPosition += (distanceVector.normalized * moveSpeed * .0001f);
+                distanceVector = targetPosition - holderPosition;
+                counter++;
+            }
+
+			double calcETA = counter * .0001f * 1000;
+            calcETA += TimeManager.Instance.ClientTimeStamp;
+            //Debug.Log("calcETA: " + calcETA);
+            //*********SEND DATA ABOUT CLICK***********//
+            LaunchPacket launchMessage;
+            if (targetObjectSide.name.Contains("Cube"))
+            {
+                int cubeID = targetObjectSide.transform.parent.GetComponent<Cube>().id;
+                int sideID = targetObjectSide.GetComponent<Side>().id;
+                launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA,cubeID,sideID);
+                GameObject side = GameManager.Instance.GetSide(launchMessage.CubeID, launchMessage.SideID);
+                side.GetComponent<Side>().TakeSide(launchMessage, GameValues.teamNum);
+            }
+            else
+            {
+                launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA);
+            }
+            
             sender.SendLaunchOnRequest(launchMessage);
         }
 		
@@ -110,7 +138,7 @@ public class Player : MonoBehaviour {
 					GameObject cube = targetObjectSide.transform.parent.gameObject;
 					Cube theCube = cube.GetComponent<Cube>();
 					
-					theCube.setSideColor(targetObjectSide, color);
+					//theCube.setSideColor(targetObjectSide, color);
 				}
 				//upon arrival, turn around
 				transform.position = targetPosition;

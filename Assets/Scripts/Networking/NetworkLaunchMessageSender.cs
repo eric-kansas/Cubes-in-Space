@@ -41,7 +41,6 @@ public class NetworkLaunchMessageSender : MonoBehaviour {
 		Debug.Log (GameManager.Instance.ClientName + " sent transform on request");
         Debug.Log(message.ToString());
         GameManager.Instance.SendLaunchMessage(message);
-		//timeLastSending = 0;
 	}
 	
 	void SendLaunchData() {

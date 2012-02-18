@@ -16,7 +16,9 @@ public class Avatar : MonoBehaviour {
     }
 	public Color color;
 	public float lag; //ping
-	public float moveSpeed = 1.25f;
+    private float moveSpeed = 60.00f;
+
+    public int team = -1;
 	
 	
 	
@@ -31,11 +33,12 @@ public class Avatar : MonoBehaviour {
         transform.position += (distanceVector.normalized * moveSpeed);
     }
 	
-	void init(Vector3 spawnPos, Color playerColor)
+	void init(Vector3 spawnPos, Color playerColor, int teamNum)
 	{
 		transform.position = spawnPos;
         targetPosition = spawnPos;
 		color = playerColor;
+        team = teamNum;
 	}
 	
 	// LERP THE CHARACTER TO THE TARGET POSITION
