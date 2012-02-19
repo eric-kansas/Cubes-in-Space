@@ -146,11 +146,10 @@ public class Player : MonoBehaviour {
 				//slow these down somehow
 				transform.forward = normal; 
 				mouseLook.lookingDir = transform.localEulerAngles;
-				isFlying = false;
 
                 //set camera
 
-                StartCoroutine(SwitchCamera(1));
+                StartCoroutine("CameraSwitch",1.0f);
                 
 	            //Camera.main.ScreenPointToRay(-normal);
 	            //Debug.Log("normal: " + hit.normal);
@@ -158,10 +157,12 @@ public class Player : MonoBehaviour {
 		}
     }
 
-    IEnumerator SwitchCamera(float delay)
+    IEnumerator CameraSwitch(float delay)
     {
         yield return new WaitForSeconds(delay);
+        isFlying = false;
         mouseLook.enabled = true;
         mouseFollow.enabled = false;
+        StopCoroutine("CameraSwitch");
     }
 }

@@ -27,7 +27,8 @@ public class GameManager : MonoBehaviour {
     private List<GameObject> cubeList;
 
     private Dictionary<string, GameObject> otherClients;
-    private List<Color> colors = new List<Color>() { Color.red, Color.magenta, Color.yellow, Color.green, Color.blue, Color.cyan };
+    public List<Color> colors = new List<Color>() { Color.red};
+    public List<Material> materials;
     private List<Vector3> positions;
 
     private GameObject myAvatar;
@@ -85,7 +86,13 @@ public class GameManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (Screen.lockCursor == false)
+            {
+                Screen.lockCursor = true;
+            }
+        }
 	}
 
     void FixedUpdate()

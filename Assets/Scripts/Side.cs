@@ -10,13 +10,22 @@ public class Side : MonoBehaviour {
     double timeLastTaken;
     int currentTeamClaim = -1;
     int teamOwnedBy = -1;
-    private List<Color> colors = new List<Color>() { Color.red, Color.magenta, Color.yellow, Color.green, Color.blue, Color.cyan };
+    private List<Color> colors;
+    private List<Material> partMaterials;
     const double LOCKINTERVAL = 5000;
+    private ParticleEmitter emitter;
+    private ParticleRenderer pRenderer;
+    private GameObject manager;
     
 
 	// Use this for initialization
 	void Start () {
-	
+        emitter = this.GetComponentInChildren<ParticleEmitter>();
+        pRenderer = this.GetComponentInChildren<ParticleRenderer>();
+        manager = GameObject.Find("GameManager");
+        GameManager managerScript = manager.GetComponent<GameManager>();
+        colors = managerScript.colors;
+        partMaterials = managerScript.materials;
 	}
 	
 	// Update is called once per frame
@@ -28,7 +37,15 @@ public class Side : MonoBehaviour {
             Debug.Log("taken at: " + TimeManager.Instance.ClientTimeStamp);
             teamOwnedBy = currentTeamClaim;
             cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy]);
+            timeLastTaken = timeToBeTaken;
             timeToBeTaken = -1;
+            pRenderer.material = partMaterials[teamOwnedBy];
+            emitter.emit = true;
+        }
+        if (emitter.emit == true && timeLastTaken + LOCKINTERVAL < TimeManager.Instance.ClientTimeStamp)
+        {
+            emitter.emit = false;
+
         }
 	}
 
@@ -42,6 +59,6 @@ public class Side : MonoBehaviour {
             Debug.Log("TAke at: " + timeToBeTaken);
             currentTeamClaim = team;
         }
-
+        
     }
 }
