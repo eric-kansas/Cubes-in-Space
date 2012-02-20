@@ -17,7 +17,9 @@ public class Player : MonoBehaviour {
     private Vector3 normal;
 	public Color color;
 	public GUIText guiText; 	//draws the distance to the target
+	
 	public bool isFlying = false;
+	public float switchDelay = 0.75f;	// delay for switching camera scripts
 	
 	
 	//movement variables
@@ -144,7 +146,7 @@ public class Player : MonoBehaviour {
 				
 				//slow these down somehow
 				transform.forward = normal; 
-				mouseLook.lookingDir = transform.localEulerAngles;
+				mouseLook.setLookingDir(transform.localEulerAngles);
 
                 //set camera
 
@@ -158,10 +160,12 @@ public class Player : MonoBehaviour {
 
     IEnumerator CameraSwitch(float delay)
     {
+		mouseFollow.arriving = true;	// we're arriving for this delay before we switch camera modes
         yield return new WaitForSeconds(delay);
         isFlying = false;
         mouseLook.enabled = true;
         mouseFollow.enabled = false;
+		mouseFollow.arriving = false;
         StopCoroutine("CameraSwitch");
     }
 }
