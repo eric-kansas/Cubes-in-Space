@@ -1,9 +1,8 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-
-Project("{9A7883E8-9275-2C18-BD90-69290E5F3CBF}") = "Cubes-in-Space", "Assembly-CSharp-firstpass-vs.csproj", "{834C4B6E-920C-6E8E-435F-E70C33558AD8}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-firstpass-vs", "Assembly-CSharp-firstpass-vs.csproj", "{834C4B6E-920C-6E8E-435F-E70C33558AD8}"
 EndProject
-Project("{9A7883E8-9275-2C18-BD90-69290E5F3CBF}") = "Cubes-in-Space", "Assembly-CSharp-vs.csproj", "{27B5F53F-6DD7-3F43-09ED-EC5236E5C8E9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-vs", "Assembly-CSharp-vs.csproj", "{27B5F53F-6DD7-3F43-09ED-EC5236E5C8E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,5 +22,4 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	
 EndGlobal

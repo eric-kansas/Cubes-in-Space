@@ -12,7 +12,7 @@ public class Side : MonoBehaviour {
 	/*****/
 	int teamLastOwnedBy = -1;
 	/*****/
-    int teamOwnedBy = -1;
+    public int teamOwnedBy = -1;
     private List<Color> colors;
     private List<Material> partMaterials;
     const double LOCKINTERVAL = 5000;

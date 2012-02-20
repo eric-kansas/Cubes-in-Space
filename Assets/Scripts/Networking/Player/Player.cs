@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 using Sfs2X;
 using Sfs2X.Core;
@@ -16,7 +17,12 @@ public class Player : MonoBehaviour {
 	private NetworkLaunchMessageSender sender;
     private Vector3 normal;
 	public Color color;
+
 	public GUIText guiText; 	//draws the distance to the target
+    private PlayerGUI myGUI;
+    private List<int> owners;
+    private GameObject parentCube;
+    private Cube pCubeScript;
 	
 	public bool isFlying = false;
 	public float switchDelay = 0.75f;	// delay for switching camera scripts
@@ -38,7 +44,10 @@ public class Player : MonoBehaviour {
         mouseFollow.target = gameObject.transform;
         mouseFollow.targetLocation = gameObject.transform.position;
 		sender = GetComponent<NetworkLaunchMessageSender>();
-		
+
+        //GUI initializers
+        owners = new List<int>();
+        myGUI = this.GetComponent<PlayerGUI>();
 		guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
 	}
 
@@ -57,15 +66,26 @@ public class Player : MonoBehaviour {
             GameObject targetObject = hit.transform.gameObject; //the side of the cube we hit
 			
 			//draw some stuff the the screen
-            if (targetObject.name != "arena")
+            if (targetObject.CompareTag("Paintable"))
             {
                 guiText.material.color = new Color(color.r, color.g, color.b);
                 guiText.text = "Distance: " + Mathf.Round(distance);
+
+                parentCube = targetObject.transform.parent.gameObject;
+                pCubeScript = parentCube.GetComponent<Cube>();
+                owners = new List<int>();
+                for (int i = 0; i < 6; i++)
+                {
+                    Side tempSide = pCubeScript.Sides[i].GetComponent<Side>();
+                    owners.Add(tempSide.teamOwnedBy);
+                }
+                myGUI.updateColors(true, owners);
             }
             else
             {
                 guiText.material.color = new Color(255, 255, 255);
                 guiText.text = "Distance: " + Mathf.Round(distance);
+                myGUI.updateColors(false);
             }
             didHit = true;
         }
