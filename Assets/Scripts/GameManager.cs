@@ -40,6 +40,12 @@ public class GameManager : MonoBehaviour {
     List<Vector3> cubePosList = new List<Vector3>();
     List<Vector3> cubeRotList = new List<Vector3>();
 	
+	//gui stuff
+	public GUIText scoresText; 	//draw out the current score standings
+	public GUIText timeText;	//draw the gameTime
+	private double gameStartTime;
+	private float gameLength;
+	private float timeStart;
     public int myLatency;
 
     private string clientName;
@@ -67,7 +73,7 @@ public class GameManager : MonoBehaviour {
         SetupTheFox();
 
         TimeManager.Instance.Init();
-        	
+		
         if (!GrandCube)
             Debug.LogError("No GrandCube prefab assigned");
         if (GameValues.isHost)
@@ -75,17 +81,53 @@ public class GameManager : MonoBehaviour {
             BuildCubes();
             BuildCubeLists();
             SendCubesDataToServer(cubePosList, cubeRotList);
+			
+			//add the start time to the room variables
+			List<RoomVariable> st = new List<RoomVariable>();
+			gameStartTime = TimeManager.Instance.ClientTimeStamp;
+			Debug.Log("Start time of the game: " + gameStartTime);
+			SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
+			st.Add(startTime);
+			smartFox.Send(new SetRoomVariablesRequest(st));
         }
         
+		//Debug.Log("Setting the user variables for playerTeam");
+		//List<UserVariable> userVars = new List<UserVariable>();
+        //userVars.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+		//smartFox.Send(new SetUserVariablesRequest(userVars));
 		
 		// Lock the mouse to the center
 		Screen.lockCursor = true;
 
-        
+  
+		
+		//draw some gui stuff
+		//scoresText = (GUIText)GameObject.Find("GUI Text Scores").GetComponent<GUIText>();
+		//timeText = (GUIText)GameObject.Find("GUI Text Time").GetComponent<GUIText>();
+		gameLength = (float)currentRoom.GetVariable("gameInfo").GetSFSObjectValue().GetInt("gameLength") * 1000;
+		
+		if (GameValues.isHost) { timeStart = (float)gameStartTime; }
+		else { timeStart = (float)currentRoom.GetVariable("startTime").GetDoubleValue(); }
     }
 	
 	// Update is called once per frame
 	void Update () {
+		//timeText.material.color = new Color(255, 255, 255);
+		//scoresText.material.color = new Color(255, 255, 255);
+		//Debug.Log("Current Room: " + currentRoom.ToString());
+		//Debug.Log("Current Room variable: " + currentRoom.GetVariable("gameInfo").ToString());
+		//Debug.Log("variable SFSObject value: " + currentRoom.GetVariable("gameInfo").GetSFSObjectValue().ToString());
+		//Debug.Log("gameLength value: " + currentRoom.GetVariable("gameInfo").GetSFSObjectValue().GetInt("gameLength"));
+		
+		//display the time
+		//client timeStamp - startTime = timePast in milliseconds
+		float timePast = ((float) TimeManager.Instance.ClientTimeStamp) - timeStart;
+		float timeLeft = gameLength - timePast;
+		timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
+		
+		//display the score
+		scoresText.text ="The Scores";
+		
         if (Input.GetMouseButtonDown(0))
         {
             if (Screen.lockCursor == false)
@@ -112,9 +154,7 @@ public class GameManager : MonoBehaviour {
         else
         {
             smartFox = new SmartFox(debug);
-        }
-
-        smartFox.enableLagMonitor(true);
+		}
         currentRoom = smartFox.LastJoinedRoom;
         clientName = smartFox.MySelf.Name;
 
@@ -128,6 +168,7 @@ public class GameManager : MonoBehaviour {
         {
             positions.Add(spawnPoints[i].transform.position);
         }
+		//Debug.Log("SetupTheFox function- Number of Spawn Points: " + positions.Count);
         
         otherClients = new Dictionary<string, GameObject>();
 
@@ -172,7 +213,15 @@ public class GameManager : MonoBehaviour {
         {
 			if (!currentRoom.UserList[i].IsItMe)
 			{
-            	MakeCharacter(currentRoom.UserList[i]);
+				if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
+				{
+					Debug.Log("Player variable exists, making character..");	
+            		MakeCharacter(currentRoom.UserList[i]);
+				}
+				else
+				{
+					Debug.Log("Not making a character until the player variables exist");	
+				}
 			}
         }
         
@@ -199,7 +248,7 @@ public class GameManager : MonoBehaviour {
                 Debug.Log("-1 fault in color picker");
             //cha = Instantiate(characterPF, positions[whichColor], Quaternion.identity) as GameObject;
             cha = Instantiate(characterPF, positions[whichColor], Quaternion.LookRotation(-positions[whichColor])) as GameObject;
-			Debug.Log("Player looking at: " + cha.transform.forward);
+			//Debug.Log("Player looking at: " + cha.transform.forward);
 			myAvatar = cha;
 			// now that we have the player, give it to the MouseLook script
 			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
@@ -209,8 +258,18 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
-            whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue();
+			Debug.Log("Finding the Null object within Make Character function...");
+			Debug.Log("-smartfox " + smartFox.ToString());
+			Debug.Log("-last joined room " + smartFox.LastJoinedRoom.ToString());
+			Debug.Log("-get user by name " +smartFox.LastJoinedRoom.GetUserByName(user.Name).ToString());
+			Debug.Log("-get variable " + smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").ToString()); //the player variables seem to be broken
+			Debug.Log("-get int value " + smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue().ToString());
+			
+            whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue(); //FIX THIS, THE BUG IS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			Debug.Log("the user is not me and which color = " + whichColor);
             int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
+			Debug.Log("username = " + user.Name + "\tposition index = " + whichPos);
+			//Debug.Log("the colorArray length = " + colors.Count);
             cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
             otherClients.Add(user.Name, cha); //update the dictionary of the other players
 			cha.GetComponent<Avatar>().color = colors[whichColor];
@@ -279,8 +338,7 @@ public class GameManager : MonoBehaviour {
         //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
         //sender.SendLaunchOnRequest();
 		
-		//make a character
-		MakeCharacter(user);
+		
     }
     private void OnUserLeaveRoom(BaseEvent evt)
     {
@@ -298,6 +356,7 @@ public class GameManager : MonoBehaviour {
         UnsubscribeDelegates();
         Screen.lockCursor = false;
         Screen.showCursor = true;
+		Debug.Log("Connection lost... Returning to lobby");
         Application.LoadLevel("The Lobby");
     }
 
@@ -322,17 +381,21 @@ public class GameManager : MonoBehaviour {
 
     public void OnUserVariablesUpdate(BaseEvent evt)
     {
+		
         //List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
-        //User user = (User)evt.Params["user"];
+        User user = (User)evt.Params["user"];
+		
+		//make a character
+		//MakeCharacter(user);
     }
     public void OnRoomVariablesUpdate(BaseEvent evt)
     {
-        Debug.Log("ROOM VARS");
+        Debug.Log("ROOM VARS have been updated");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
 
-        Debug.Log(changedVars.Contains("cubesInSpace"));
-        Debug.Log(changedVars.Contains("gameStarted"));
+        Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
+        Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
         if (!GameValues.isHost)
         {
             // Check if the "gameStarted" variable was changed

@@ -21,7 +21,7 @@ public class LaunchPacket
 
     }
 
-    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double eta, int cubeID = -1, int sideID = -1)
+    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double eta, int cubeID, int sideID)
     {
         //side hit
         this.cubeID = cubeID;

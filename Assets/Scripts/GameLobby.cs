@@ -131,7 +131,7 @@ public class GameLobby : MonoBehaviour
 
     public void OnRoomVariablesUpdate(BaseEvent evt)
     {
-        Debug.Log("ROOM VARS");
+        //Debug.Log("ROOM VARS");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
 
@@ -145,7 +145,7 @@ public class GameLobby : MonoBehaviour
                     Debug.Log("Game started");
                     String[] nameParts = this.currentActiveRoom.Name.Split('-');
                     Debug.Log(nameParts[0] + " - Game");
-                    smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game"));
+                    smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game", "", CurrentActiveRoom.Id));
                 }
                 else
                 {
@@ -290,7 +290,7 @@ public class GameLobby : MonoBehaviour
 
                 List<RoomVariable> roomVars = new List<RoomVariable>();
                 roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                Debug.Log("sending start");
+                //Debug.Log("sending start");
                 smartFox.Send(new SetRoomVariablesRequest(roomVars));
 
 
@@ -318,9 +318,9 @@ public class GameLobby : MonoBehaviour
                 //      -(int)      length of the game in seconds   key: "gameLength"
 
                 SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
-                //SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
+                
+				
                 settings.Variables.Add(gameInfo);
-
                 //get the values from the appropriate fields to populate the gameInfo
 
                 smartFox.Send(new CreateRoomRequest(settings, true));

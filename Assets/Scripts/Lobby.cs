@@ -38,8 +38,8 @@ public class Lobby : MonoBehaviour {
 	private string[] roomFullStrings; //Names and descriptions
 	private int screenW;
 
-    private int maxPlayers = 12;
-    private int numTeams = 4;
+    private int maxPlayers = 16;
+    private int numTeams = 8;
 	
 	void Start()
 	{
@@ -117,7 +117,8 @@ public class Lobby : MonoBehaviour {
 
 	// Various SFS callbacks
 	public void OnLogin(BaseEvent evt) {
-		try {
+		try
+		{
 			if (evt.Params.ContainsKey("success") && !(bool)evt.Params["success"]) {
 				loginErrorMessage = (string)evt.Params["errorMessage"];
 				Debug.Log("Login error: "+loginErrorMessage);
@@ -153,7 +154,7 @@ public class Lobby : MonoBehaviour {
 	{
 		Room room = (Room)evt.Params["room"];
 		SetupRoomList();
-		Debug.Log("Room added: "+room.Name);
+		//Debug.Log("Room added: "+room.Name);
 	}
 	public void OnRoomCreationError(BaseEvent evt)
 	{
@@ -164,25 +165,25 @@ public class Lobby : MonoBehaviour {
 	{
 		Room room = (Room)evt.Params["room"];
 		currentActiveRoom = room;
-		Debug.Log("Lobby- OnJoinRoom: joined " + room.Name);
-        Debug.Log("\t-username: " + username);
-        Debug.Log("\t-host: " + room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host"));
+		//Debug.Log("Lobby- OnJoinRoom: joined " + room.Name);
+        //Debug.Log("\t-username: " + username);
+        //Debug.Log("\t-host: " + room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host"));
         if (room.Name == "The Lobby")
         {
-            Debug.Log("\t-Loading up the lobby");
+        //    Debug.Log("\t-Loading up the lobby");
             Application.LoadLevel(room.Name);
         }
         else
         {
-            Debug.Log("\t-Loading the Game Lobby");
+         //   Debug.Log("\t-Loading the Game Lobby");
             if (username.Equals(room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host")))
             {
-                Debug.Log("\t-YES IM THE HOST WOOT!!");
+         //       Debug.Log("\t-YES IM THE HOST WOOT!!");
                 GameValues.isHost = true;
             }
             else
             {
-                Debug.Log("\t-not the host");
+         //       Debug.Log("\t-not the host");
                 GameValues.isHost = false;
             }
 
@@ -192,13 +193,14 @@ public class Lobby : MonoBehaviour {
             
             //pick the team to join
             GameValues.teamNum = (int)(GameValues.playerID / (maxPlayers / numTeams));
+            Debug.Log("Player is joining team #" + GameValues.teamNum);
             //store my own color on server as user data
             List<UserVariable> uData = new List<UserVariable>();
             uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
             smartFox.Send(new SetUserVariablesRequest(uData));
         }
 
-        Debug.Log("\t-end OnJoinRoom funtion");
+        //Debug.Log("\t-end OnJoinRoom funtion");
 	}
 
     private int GetPlayerID(User user)
@@ -218,7 +220,7 @@ public class Lobby : MonoBehaviour {
             SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
             //Debug.Log("ya :" + idsLeft.Size());
             int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
-            playerID = idsLeft.GetInt(ran);
+            playerID = idsLeft.GetInt(0);
 
             //update room variable 
             idsLeft.RemoveElementAt(ran);
@@ -386,7 +388,9 @@ public class Lobby : MonoBehaviour {
         {
             if (GUILayout.Button("Make Game"))
             {
-
+				Debug.Log("Make Game Button clicked");
+				
+				
                 // ****** Create new room ******* //
                 int gameLength = 120; //time in seconds
 
@@ -421,17 +425,18 @@ public class Lobby : MonoBehaviour {
                 gameInfo.PutSFSArray("playerIDs", playerIDs);                   //the player IDs
                 gameInfo.PutInt("numTeams", numTeams);                          //the number of teams
 
-                SFSArray teams = new SFSArray();
+                SFSArray teams = new SFSArray();								//ASSIGN WHICH PLAYERS GO ON WHICH TEAMS
                 int counter = 0;
-                int[] teamPlayerIndices;
-                for (int i = 0; i < numTeams; i++)
-                {
-                    teamPlayerIndices = new int[maxPlayers / numTeams];
-                    for (int j = 0; j < maxPlayers / numTeams; j++)             //j < (12 / 4)  maxPlayers / numTeams
-                    {                                                           //team 0: 0, 1, 2
-                        teamPlayerIndices[j] = counter;                         //team 1: 3, 4, 5
-                        counter++;                                              //team 2: 6, 7, 8
-                    }                                                           //team 3: 9, 10, 11
+                int[] teamPlayerIndices;										// numTeams = 8, maxPlayers = 16
+                for (int i = 0; i < numTeams; i++)								// i = 0, j = 0, j = 1, index = 0, index = 8
+                {																// i = 1, j = 0, j = 1, index = 1, index = 9
+                    teamPlayerIndices = new int[maxPlayers / numTeams];			// i = 2, j = 0, j = 1, index = 2, index = 10
+                    for (int j = 0; j < maxPlayers / numTeams; j++)				// i = 3, j = 0, j = 1, index = 3, index = 11
+                    { 															// ...
+						int index = i + (j * numTeams);
+                    	teamPlayerIndices[j] = index;							// i = 7, j = 0, j = 1, index = 7, index = 15
+                    }
+					
                     teams.AddIntArray(teamPlayerIndices);
                 }
                 gameInfo.PutSFSArray("teams", teams);                           //an array of possible values to be grabbed
@@ -441,7 +446,7 @@ public class Lobby : MonoBehaviour {
 
 
                 settings.Variables = roomVariables;
-                smartFox.Send(new CreateRoomRequest(settings, true));           // Contains: maxUsers, and roomVariables
+                smartFox.Send(new CreateRoomRequest(settings, true, CurrentActiveRoom));           // Contains: maxUsers, and roomVariables
                 Debug.Log("new room " + username + "- Room");
             }
         }
@@ -464,7 +469,7 @@ public class Lobby : MonoBehaviour {
 
             if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
             {
-                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection]));
+                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection], "", CurrentActiveRoom.Id));
             }
             GUILayout.EndScrollView();
 
@@ -485,7 +490,7 @@ public class Lobby : MonoBehaviour {
 
             if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
             {
-                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection]));
+                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection], "", CurrentActiveRoom.Id));
             }
             GUILayout.EndScrollView();
 
@@ -531,7 +536,8 @@ public class Lobby : MonoBehaviour {
 	private void SetupRoomList () {
 		List<string> rooms = new List<string> ();
 		List<string> roomsFull = new List<string> ();
-		
+		//Debug.Log("SetupRoomList function...");
+		//Debug.Log("is smartfox initialized " + smartFox.ToString());
 		List<Room> allRooms = smartFox.RoomManager.GetRoomList();
 		
 		foreach (Room room in allRooms) {
@@ -543,7 +549,7 @@ public class Lobby : MonoBehaviour {
 		roomFullStrings = roomsFull.ToArray();
 		
 		if (smartFox.LastJoinedRoom==null) {
-			smartFox.Send(new JoinRoomRequest("The Lobby"));
+			smartFox.Send(new JoinRoomRequest("The Lobby"));// "", CurrentActiveRoom.Id));
 		}
 	}
 }

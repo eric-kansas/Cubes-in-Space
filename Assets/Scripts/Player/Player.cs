@@ -16,9 +16,7 @@ public class Player : MonoBehaviour {
 	private NetworkLaunchMessageSender sender;
     private Vector3 normal;
 	public Color color;
-
-    public GUIText guiText;
-	
+	public GUIText guiText; 	//draws the distance to the target
 	public bool isFlying = false;
 	
 	
@@ -31,7 +29,6 @@ public class Player : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
         mouseLook = Camera.mainCamera.GetComponent<MouseLook>();
         mouseFollow = Camera.mainCamera.GetComponent<SmoothFollowCS>();
         //set camera
@@ -39,6 +36,8 @@ public class Player : MonoBehaviour {
         mouseFollow.target = gameObject.transform;
         mouseFollow.targetLocation = gameObject.transform.position;
 		sender = GetComponent<NetworkLaunchMessageSender>();
+		
+		guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
 	}
 
     // Update is called once per frame
@@ -48,14 +47,14 @@ public class Player : MonoBehaviour {
         // variable for the raycast info
         RaycastHit hit;
         bool didHit = false;
-
-        
+		
         if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 1000))
         {
             Vector3 distanceVector = hit.point - transform.position;
             float distance = distanceVector.magnitude;
             GameObject targetObject = hit.transform.gameObject; //the side of the cube we hit
-
+			
+			//draw some stuff the the screen
             if (targetObject.name != "arena")
             {
                 guiText.material.color = new Color(color.r, color.g, color.b);
@@ -112,7 +111,7 @@ public class Player : MonoBehaviour {
             }
             else
             {
-                launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA);
+                launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA, -1, -1);
             }
             
             sender.SendLaunchOnRequest(launchMessage);
@@ -154,8 +153,8 @@ public class Player : MonoBehaviour {
 	            //Camera.main.ScreenPointToRay(-normal);
 	            //Debug.Log("normal: " + hit.normal);
 			}
-		}
-    }
+		}//end isFlying
+    } //end update
 
     IEnumerator CameraSwitch(float delay)
     {
