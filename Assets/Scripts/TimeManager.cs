@@ -39,6 +39,7 @@ public class TimeManager : MonoBehaviour {
 		pingCount = 0;
 		pingValueIndex = 0;
 		running = true;
+		GameManager.Instance.TimeSyncRequest();
         Debug.Log("here openinged");
 	}
 		

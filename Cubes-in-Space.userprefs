@@ -2,14 +2,15 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\GameManager.cs">
     <Files>
-      <File FileName="Assets\Scripts\Lobby.cs" Line="407" Column="42" />
+      <File FileName="Assets\Scripts\GameManager.cs" Line="299" Column="1" />
+      <File FileName="Assets\Scripts\Lobby.cs" Line="472" Column="81" />
       <File FileName="Assets\Scripts\Player\Avatar.cs" Line="31" Column="5" />
-      <File FileName="Assets\Scripts\GameManager.cs" Line="124" Column="79" />
       <File FileName="Assets\Scripts\Networking\NetworkLaunchMessageReceiver.cs" Line="26" Column="2" />
       <File FileName="Assets\Scripts\Player\Player.cs" Line="108" Column="22" />
       <File FileName="Assets\Scripts\GameLobby.cs" Line="321" Column="1" />
       <File FileName="Assets\Scripts\GameValues.cs" Line="8" Column="30" />
-      <File FileName="Assets\Scripts\TimeManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\TimeManager.cs" Line="39" Column="17" />
+      <File FileName="Assets\Scripts\Side.cs" Line="12" Column="21" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

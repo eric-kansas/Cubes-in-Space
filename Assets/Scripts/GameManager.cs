@@ -39,13 +39,14 @@ public class GameManager : MonoBehaviour {
 
     List<Vector3> cubePosList = new List<Vector3>();
     List<Vector3> cubeRotList = new List<Vector3>();
+	List<int> teamScores = new List<int>();
 	
 	//gui stuff
 	public GUIText scoresText; 	//draw out the current score standings
 	public GUIText timeText;	//draw the gameTime
 	private double gameStartTime;
 	private float gameLength;
-	private float timeStart;
+	private double timeStart;
     public int myLatency;
 
     private string clientName;
@@ -56,6 +57,7 @@ public class GameManager : MonoBehaviour {
 
     private static GameManager instance;
     private bool worldLoaded = false;
+	private bool firstTime = true;
     public static GameManager Instance
     {
         get { return instance; }
@@ -74,6 +76,14 @@ public class GameManager : MonoBehaviour {
 
         TimeManager.Instance.Init();
 		
+		SFSObject lobbyGameInfo = (SFSObject) currentRoom.GetVariable("gameInfo").GetSFSObjectValue();
+
+		int numTeams = lobbyGameInfo.GetInt("numTeams");
+
+		for(int i = 0; i < numTeams; i++){
+			teamScores.Add(0);
+		}
+		
         if (!GrandCube)
             Debug.LogError("No GrandCube prefab assigned");
         if (GameValues.isHost)
@@ -81,14 +91,6 @@ public class GameManager : MonoBehaviour {
             BuildCubes();
             BuildCubeLists();
             SendCubesDataToServer(cubePosList, cubeRotList);
-			
-			//add the start time to the room variables
-			List<RoomVariable> st = new List<RoomVariable>();
-			gameStartTime = TimeManager.Instance.ClientTimeStamp;
-			Debug.Log("Start time of the game: " + gameStartTime);
-			SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
-			st.Add(startTime);
-			smartFox.Send(new SetRoomVariablesRequest(st));
         }
         
 		//Debug.Log("Setting the user variables for playerTeam");
@@ -105,9 +107,7 @@ public class GameManager : MonoBehaviour {
 		//scoresText = (GUIText)GameObject.Find("GUI Text Scores").GetComponent<GUIText>();
 		//timeText = (GUIText)GameObject.Find("GUI Text Time").GetComponent<GUIText>();
 		gameLength = (float)currentRoom.GetVariable("gameInfo").GetSFSObjectValue().GetInt("gameLength") * 1000;
-		
-		if (GameValues.isHost) { timeStart = (float)gameStartTime; }
-		else { timeStart = (float)currentRoom.GetVariable("startTime").GetDoubleValue(); }
+	
     }
 	
 	// Update is called once per frame
@@ -121,12 +121,31 @@ public class GameManager : MonoBehaviour {
 		
 		//display the time
 		//client timeStamp - startTime = timePast in milliseconds
-		float timePast = ((float) TimeManager.Instance.ClientTimeStamp) - timeStart;
-		float timeLeft = gameLength - timePast;
-		timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
+		if(!firstTime){
+			double timePast = TimeManager.Instance.ClientTimeStamp - timeStart;
+			double timeLeft = gameLength - timePast;
+			timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
+
+			//Debug.Log("((float) TimeManager.Instance.ClientTimeStamp): " + TimeManager.Instance.ClientTimeStamp);
+			//Debug.Log("timeStart: " + timeStart);
+			
+			if (timeLeft <= 0)
+			{
+				//leave the game room
+				smartFox.Send(new JoinRoomRequest("The Lobby", "", currentRoom.Id));
+				//smartFox.Send(new LeaveRoomRequest(currentRoom.Name));
+			}
+		}
 		
 		//display the score
-		scoresText.text ="The Scores";
+		string scoreMessage = "";
+		for (int i = 0; i < teamScores.Count; i++)
+		{
+			
+			scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";	
+		}
+		
+		scoresText.text = scoreMessage;
 		
         if (Input.GetMouseButtonDown(0))
         {
@@ -213,7 +232,7 @@ public class GameManager : MonoBehaviour {
         {
 			if (!currentRoom.UserList[i].IsItMe)
 			{
-				if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
+                if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
 				{
 					Debug.Log("Player variable exists, making character..");	
             		MakeCharacter(currentRoom.UserList[i]);
@@ -233,6 +252,13 @@ public class GameManager : MonoBehaviour {
         ExtensionRequest request = new ExtensionRequest("getTime", new SFSObject(), currentRoom);
         smartFox.Send(request);
     }
+	
+	public void UpdateTeamScore (int teamLastOwnedBy, int teamOwnedBy)
+	{
+		if(teamLastOwnedBy != -1)
+			teamScores[teamLastOwnedBy]--;
+		teamScores[teamOwnedBy]++;
+	}
 
     void MakeCharacter(User user)
     {
@@ -267,7 +293,7 @@ public class GameManager : MonoBehaviour {
 			
             whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue(); //FIX THIS, THE BUG IS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			Debug.Log("the user is not me and which color = " + whichColor);
-            int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
+            int whichPos = smartFox.LastJoinedRoom.GetVariable("playerID").GetIntValue();
 			Debug.Log("username = " + user.Name + "\tposition index = " + whichPos);
 			//Debug.Log("the colorArray length = " + colors.Count);
             cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
@@ -308,13 +334,31 @@ public class GameManager : MonoBehaviour {
     {
         try
         {
-           // Debug.Log("extension:");
+            Debug.Log("extension:");
             string cmd = (string)evt.Params["cmd"];
             ISFSObject dt = (SFSObject)evt.Params["params"];
             if (cmd == "time")
             {
                 HandleServerTime(dt);
             }
+			if(firstTime){
+				//is host
+				if(GameValues.isHost){
+					//add the start time to the room variables
+					List<RoomVariable> st = new List<RoomVariable>();
+					gameStartTime = TimeManager.Instance.ClientTimeStamp;
+					
+					SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
+					st.Add(startTime);
+					smartFox.Send(new SetRoomVariablesRequest(st));
+				
+					Debug.Log("Start time of the game: " + gameStartTime);
+				 	timeStart = (float)gameStartTime;
+					Debug.Log("Start time of the game timeStart: " + timeStart);
+				}
+				
+				firstTime = false;
+			}
         }
         catch (Exception e)
         {
@@ -382,9 +426,8 @@ public class GameManager : MonoBehaviour {
     public void OnUserVariablesUpdate(BaseEvent evt)
     {
 		
-        //List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
+        List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
         User user = (User)evt.Params["user"];
-		
 		//make a character
 		//MakeCharacter(user);
     }
@@ -393,22 +436,18 @@ public class GameManager : MonoBehaviour {
         Debug.Log("ROOM VARS have been updated");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
-
+		
         Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
         Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
+		Debug.Log("Changed var contains game startTime? " + changedVars.Contains("startTime"));
         if (!GameValues.isHost)
         {
             // Check if the "gameStarted" variable was changed
-            if (changedVars.Contains("gameStarted"))
+            if (changedVars.Contains("startTime"))
             {
-                if (room.GetVariable("gameStarted").GetBoolValue() == true)
-                {
-                    Debug.Log("Game started");
-                }
-                else
-                {
-                    Debug.Log("Game stopped");
-                }
+
+                    timeStart = (float)currentRoom.GetVariable("startTime").GetDoubleValue();
+                    Debug.Log("startTime: " + timeStart);
             }
             // Check if map has been uploaded
             if (changedVars.Contains("cubesInSpace") && !worldLoaded)
@@ -434,8 +473,9 @@ public class GameManager : MonoBehaviour {
                 }
                 loadWorld();
             }
-        }
 
+        }
+		
     }
 
     private void loadWorld()

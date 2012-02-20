@@ -108,6 +108,10 @@ public class GameLobby : MonoBehaviour
         else if (room.IsGame)
         {
             //Debug.Log("is game!!!!");
+			//store my own color on server as user data
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
+            smartFox.Send(new SetUserVariablesRequest(uData));
             Application.LoadLevel("testScene");
         }
         else

@@ -9,6 +9,9 @@ public class Side : MonoBehaviour {
     double timeToBeTaken = -1;
     double timeLastTaken;
     int currentTeamClaim = -1;
+	/*****/
+	int teamLastOwnedBy = -1;
+	/*****/
     int teamOwnedBy = -1;
     private List<Color> colors;
     private List<Material> partMaterials;
@@ -34,12 +37,19 @@ public class Side : MonoBehaviour {
         //if there is a time to be taken set && the current time is passed the time to take
         if (timeToBeTaken > 0 && TimeManager.Instance.ClientTimeStamp > timeToBeTaken)
         {
+			teamLastOwnedBy = teamOwnedBy;
             Debug.Log("taken at: " + TimeManager.Instance.ClientTimeStamp);
             teamOwnedBy = currentTeamClaim;
             cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy]);
             timeLastTaken = timeToBeTaken;
             timeToBeTaken = -1;
             pRenderer.material = partMaterials[teamOwnedBy];
+			
+			
+			//UPDATE SCORE *****/
+			GameManager.Instance.UpdateTeamScore(teamLastOwnedBy, teamOwnedBy);
+			/*****/
+			
             emitter.emit = true;
         }
         if (emitter.emit == true && timeLastTaken + LOCKINTERVAL < TimeManager.Instance.ClientTimeStamp)
