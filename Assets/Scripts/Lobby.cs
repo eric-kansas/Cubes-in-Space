@@ -15,9 +15,10 @@ using Sfs2X.Logging;
 public class Lobby : MonoBehaviour {
 
 	private SmartFox smartFox;
-	private string zone = "EMH"; //log onto "EMH"
+	private string zone = "EMH"; 
 	private string serverName = "129.21.29.6";
 	private int serverPort = 9933;
+
 	public string username = "";
 	private string loginErrorMessage = "";
 	private bool isLoggedIn;
@@ -175,7 +176,7 @@ public class Lobby : MonoBehaviour {
         }
         else
         {
-         //   Debug.Log("\t-Loading the Game Lobby");
+         //   Checki if this user is the host
             if (username.Equals(room.GetVariable("gameInfo").GetSFSObjectValue().GetUtfString("host")))
             {
          //       Debug.Log("\t-YES IM THE HOST WOOT!!");
@@ -183,16 +184,18 @@ public class Lobby : MonoBehaviour {
             }
             else
             {
-         //       Debug.Log("\t-not the host");
                 GameValues.isHost = false;
             }
 
             //get player id
             GameValues.playerID = GetPlayerID(smartFox.MySelf);
+            
             Application.LoadLevel("Game Lobby");
             
             //pick the team to join
             GameValues.teamNum = (int)(GameValues.playerID / (maxPlayers / numTeams));
+
+            Debug.Log("Player ID: " + GameValues.playerID);
             Debug.Log("Player is joining team #" + GameValues.teamNum);
             //store my own color on server as user data
             List<UserVariable> uData = new List<UserVariable>();
@@ -219,11 +222,11 @@ public class Lobby : MonoBehaviour {
             //Debug.Log("\t-Getting the ids that are left");
             SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
             //Debug.Log("ya :" + idsLeft.Size());
-            int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
+            //int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
             playerID = idsLeft.GetInt(0);
 
             //update room variable 
-            idsLeft.RemoveElementAt(ran);
+            idsLeft.RemoveElementAt(0);
             //send back to store on server
             List<RoomVariable> rData = new List<RoomVariable>();
             gameInfo.PutSFSArray("playerIDs", idsLeft);

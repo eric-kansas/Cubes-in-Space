@@ -44,9 +44,6 @@ public class GameManager : MonoBehaviour {
 	//gui stuff
 	public GUIText scoresText; 	//draw out the current score standings
 	public GUIText timeText;	//draw the gameTime
-	private double gameStartTime;
-	private float gameLength;
-	private double timeStart;
     public int myLatency;
 
     private string clientName;
@@ -58,6 +55,25 @@ public class GameManager : MonoBehaviour {
     private static GameManager instance;
     private bool worldLoaded = false;
 	private bool firstTime = true;
+
+    SFSObject lobbyGameInfo;
+
+      //      -(string)   the host username               key: "host"
+                //      -(IntArray) playerIds                       key: "playerIDs"
+                //      -(int)      number of Teams                 key: "numTeams"
+                //      -(SFSArray) teams                           key: "teams"
+                //      -(int)      length of the game in seconds   key: "gameLength"
+    string host;
+    int numberOfPlayers;
+    int numberOfTeams;
+    SFSArray teams;
+    int gameLength;
+
+    private double gameStartTime;
+	private double timeStart;
+    private int playerCount;
+
+
     public static GameManager Instance
     {
         get { return instance; }
@@ -72,42 +88,147 @@ public class GameManager : MonoBehaviour {
 	void Start () {
 
         cubeList = new List<GameObject>();
+        otherClients = new Dictionary<string, GameObject>();
         SetupTheFox();
 
         TimeManager.Instance.Init();
-		
-		SFSObject lobbyGameInfo = (SFSObject) currentRoom.GetVariable("gameInfo").GetSFSObjectValue();
 
-		int numTeams = lobbyGameInfo.GetInt("numTeams");
-
-		for(int i = 0; i < numTeams; i++){
-			teamScores.Add(0);
-		}
-		
-        if (!GrandCube)
-            Debug.LogError("No GrandCube prefab assigned");
         if (GameValues.isHost)
         {
             BuildCubes();
             BuildCubeLists();
             SendCubesDataToServer(cubePosList, cubeRotList);
         }
-        
-		//Debug.Log("Setting the user variables for playerTeam");
-		//List<UserVariable> userVars = new List<UserVariable>();
-        //userVars.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-		//smartFox.Send(new SetUserVariablesRequest(userVars));
-		
-		// Lock the mouse to the center
-		Screen.lockCursor = true;
 
-  
-		
-		//draw some gui stuff
-		//scoresText = (GUIText)GameObject.Find("GUI Text Scores").GetComponent<GUIText>();
-		//timeText = (GUIText)GameObject.Find("GUI Text Time").GetComponent<GUIText>();
-		gameLength = (float)currentRoom.GetVariable("gameInfo").GetSFSObjectValue().GetInt("gameLength") * 1000;
+        ConfirmJoinedGame();
+
+        //SetupGameWorld();
 	
+    }
+
+    private void SetupTheFox()
+    {
+        bool debug = true;
+        running = true;
+        if (SmartFoxConnection.IsInitialized)
+        {
+            smartFox = SmartFoxConnection.Connection;
+        }
+        else
+        {
+            smartFox = new SmartFox(debug);
+        }
+        currentRoom = smartFox.LastJoinedRoom;
+        clientName = smartFox.MySelf.Name;
+
+        // set up arrays of positions 
+        positions = new List<Vector3>();
+        GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("SpawnTag");
+        for (int i = 0; i < spawnPoints.Length; i++)
+        {
+            positions.Add(spawnPoints[i].transform.position);
+        }
+
+        lobbyGameInfo = (SFSObject)currentRoom.GetVariable("gameInfo").GetSFSObjectValue();
+
+        host = lobbyGameInfo.GetUtfString("host");
+        numberOfTeams = lobbyGameInfo.GetInt("numTeams");
+        numberOfPlayers = currentRoom.GetVariable("numberOfPlayers").GetIntValue();
+        teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
+        gameLength = lobbyGameInfo.GetInt("gameLength");
+
+        gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
+
+        SetupListeners();
+
+    }
+
+    private void ConfirmJoinedGame()
+    {
+        //add your player id to the list of joined players
+        List<RoomVariable> roomVars = new List<RoomVariable>();
+        SFSArray playersJoined = (SFSArray)currentRoom.GetVariable("playersJoined").GetSFSArrayValue();
+        Debug.Log("joined players so far: " + playersJoined.Size());
+        playersJoined.AddInt(GameValues.playerID);
+        SFSRoomVariable roomVar = new SFSRoomVariable("playersJoined", playersJoined);
+        roomVars.Add(roomVar);
+        smartFox.Send(new SetRoomVariablesRequest(roomVars));
+
+        //register your team 
+
+        List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+        userVars.Add(new SFSUserVariable("playerJoined", true));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
+    }
+
+
+    private void SetupGameWorld()
+    {
+        Debug.Log("SetupGameWorld");
+        //build team scores
+        for (int i = 0; i < numberOfTeams; i++)
+        {
+            teamScores.Add(0);
+        }
+
+        //Debug.Log("Setting the user variables for playerTeam");
+
+
+        //draw some gui stuff
+        //scoresText = (GUIText)GameObject.Find("GUI Text Scores").GetComponent<GUIText>();
+        //timeText = (GUIText)GameObject.Find("GUI Text Time").GetComponent<GUIText>();
+        
+
+        //check status of room
+        if (!GameValues.isHost && currentRoom.ContainsVariable("cubesInSpace"))
+        {
+            //make sure that all the cubes in the host room are the same in all other clients
+            SFSArray cubes = (SFSArray)currentRoom.GetVariable("cubesInSpace").GetSFSArrayValue();
+            cubePosList = new List<Vector3>();
+            cubeRotList = new List<Vector3>();
+            for (int i = 0; i < cubes.Size(); i++)
+            {
+                Vector3 pos = new Vector3();
+                pos.x = cubes.GetSFSObject(i).GetFloat("x");
+                pos.y = cubes.GetSFSObject(i).GetFloat("y");
+                pos.z = cubes.GetSFSObject(i).GetFloat("z");
+
+                cubePosList.Add(pos);
+
+                Vector3 rot = new Vector3();
+                rot.x = cubes.GetSFSObject(i).GetFloat("rx");
+                rot.y = cubes.GetSFSObject(i).GetFloat("ry");
+                rot.z = cubes.GetSFSObject(i).GetFloat("rz");
+
+                cubeRotList.Add(rot);
+            }
+            loadWorld();
+        }
+
+        // create my avatar
+        MakeCharacter(smartFox.MySelf);
+
+        for (int i = 0; i < currentRoom.UserList.Count; i++)
+        {
+            if (!currentRoom.UserList[i].IsItMe)
+            {
+                if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
+                {
+                    Debug.Log("Player variable exists, making character..");
+                    MakeCharacter(currentRoom.UserList[i]);
+                }
+                else
+                {
+                    Debug.Log("Not making a character until the player variables exist");
+                }
+            }
+        }
+
+        // Lock the mouse to the center
+        Screen.lockCursor = true;
+
+
     }
 	
 	// Update is called once per frame
@@ -115,9 +236,6 @@ public class GameManager : MonoBehaviour {
 		//timeText.material.color = new Color(255, 255, 255);
 		//scoresText.material.color = new Color(255, 255, 255);
 		//Debug.Log("Current Room: " + currentRoom.ToString());
-		//Debug.Log("Current Room variable: " + currentRoom.GetVariable("gameInfo").ToString());
-		//Debug.Log("variable SFSObject value: " + currentRoom.GetVariable("gameInfo").GetSFSObjectValue().ToString());
-		//Debug.Log("gameLength value: " + currentRoom.GetVariable("gameInfo").GetSFSObjectValue().GetInt("gameLength"));
 		
 		//display the time
 		//client timeStamp - startTime = timePast in milliseconds
@@ -162,90 +280,7 @@ public class GameManager : MonoBehaviour {
         smartFox.ProcessEvents();
     }
 
-    private void SetupTheFox()
-    {
-        bool debug = true;
-        running = true;
-        if (SmartFoxConnection.IsInitialized)
-        {
-            smartFox = SmartFoxConnection.Connection;
-        }
-        else
-        {
-            smartFox = new SmartFox(debug);
-		}
-        currentRoom = smartFox.LastJoinedRoom;
-        clientName = smartFox.MySelf.Name;
-
-		//make sure this matches the game lobby list
-		
-
-        // set up arrays of positions 
-        positions = new List<Vector3>();
-		GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("SpawnTag");
-        for (int i = 0; i < spawnPoints.Length; i++)
-        {
-            positions.Add(spawnPoints[i].transform.position);
-        }
-		//Debug.Log("SetupTheFox function- Number of Spawn Points: " + positions.Count);
-        
-        otherClients = new Dictionary<string, GameObject>();
-
-        
-
-        //start sending transform data
-        //NetworkTransformSender tfSender = myAvatar.GetComponent<NetworkTransformSender>();
-        //tfSender.StartSendTransform();
-
-        SetupListeners();
-
-        // create my avatar
-        MakeCharacter(smartFox.MySelf);
-
-        //check status of room
-        if (currentRoom.ContainsVariable("cubesInSpace"))
-        {
-			//make sure that all the cubes in the host room are the same in all other clients
-            SFSArray cubes = (SFSArray)currentRoom.GetVariable("cubesInSpace").GetSFSArrayValue();
-            cubePosList = new List<Vector3>();
-            cubeRotList = new List<Vector3>();
-            for (int i = 0; i < cubes.Size(); i++)
-            {
-                Vector3 pos = new Vector3();
-                pos.x = cubes.GetSFSObject(i).GetFloat("x");
-                pos.y = cubes.GetSFSObject(i).GetFloat("y");
-                pos.z = cubes.GetSFSObject(i).GetFloat("z");
-                
-                cubePosList.Add(pos);
-
-                Vector3 rot = new Vector3();
-                rot.x = cubes.GetSFSObject(i).GetFloat("rx");
-                rot.y = cubes.GetSFSObject(i).GetFloat("ry");
-                rot.z = cubes.GetSFSObject(i).GetFloat("rz");
-
-                cubeRotList.Add(rot);
-            }
-            loadWorld();
-        }
-
-        for(int i = 0; i < currentRoom.UserList.Count; i++)
-        {
-			if (!currentRoom.UserList[i].IsItMe)
-			{
-                if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
-				{
-					Debug.Log("Player variable exists, making character..");	
-            		MakeCharacter(currentRoom.UserList[i]);
-				}
-				else
-				{
-					Debug.Log("Not making a character until the player variables exist");	
-				}
-			}
-        }
-        
-
-    }
+ 
 
     public void TimeSyncRequest()
     {
@@ -257,7 +292,8 @@ public class GameManager : MonoBehaviour {
 	{
 		if(teamLastOwnedBy != -1)
 			teamScores[teamLastOwnedBy]--;
-		teamScores[teamOwnedBy]++;
+        if (teamOwnedBy != -1)
+		    teamScores[teamOwnedBy]++;
 	}
 
     void MakeCharacter(User user)
@@ -327,20 +363,19 @@ public class GameManager : MonoBehaviour {
         smartFox.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, OnUserVariablesUpdate);
         smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
         smartFox.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
-        //smartFox.AddEventListener(SFSEvent.PING_PONG, OnPingPong);
     }
 
     private void OnExtensionResponse(BaseEvent evt)
     {
         try
         {
-            Debug.Log("extension:");
             string cmd = (string)evt.Params["cmd"];
             ISFSObject dt = (SFSObject)evt.Params["params"];
             if (cmd == "time")
             {
                 HandleServerTime(dt);
             }
+            /*
 			if(firstTime){
 				//is host
 				if(GameValues.isHost){
@@ -359,6 +394,7 @@ public class GameManager : MonoBehaviour {
 				
 				firstTime = false;
 			}
+             */
         }
         catch (Exception e)
         {
@@ -381,9 +417,8 @@ public class GameManager : MonoBehaviour {
         Debug.Log("user entered room " + user.Name);
         //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
         //sender.SendLaunchOnRequest();
-		
-		
     }
+
     private void OnUserLeaveRoom(BaseEvent evt)
     {
         //remove this user from our world and update our data structures
@@ -425,9 +460,27 @@ public class GameManager : MonoBehaviour {
 
     public void OnUserVariablesUpdate(BaseEvent evt)
     {
-		
-        List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
+
+        //List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
+        ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
         User user = (User)evt.Params["user"];
+        Debug.Log("USERVAR: " + changedVars[0]);
+        if (GameValues.isHost)
+        {
+            if (changedVars.Contains("playerJoined")){
+                playerCount++;
+                Debug.Log("player count: " + playerCount);
+                if (playerCount == numberOfPlayers)
+                {
+                    Debug.Log("GAME START");
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
+                    roomVars.Add(roomVar);
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+                    SetupGameWorld();
+                }
+            }
+        }
 		//make a character
 		//MakeCharacter(user);
     }
@@ -436,11 +489,31 @@ public class GameManager : MonoBehaviour {
         Debug.Log("ROOM VARS have been updated");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
-		
+
+        Debug.Log("Changed Var contains playersJoined? " + changedVars.Contains("playersJoined"));
         Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
         Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
 		Debug.Log("Changed var contains game startTime? " + changedVars.Contains("startTime"));
-        if (!GameValues.isHost)
+
+        if (GameValues.isHost)
+        {
+            if (changedVars.Contains("playersJoined"))
+            {
+                Debug.Log("current players: " + currentRoom.GetVariable("playersJoined").GetSFSArrayValue().Size());
+                Debug.Log("num play : " + numberOfPlayers);
+                /*
+                if (currentRoom.GetVariable("playersJoined").GetSFSArrayValue().Size() == numberOfPlayers)
+                {
+                    Debug.Log("GAME START");
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
+                    roomVars.Add(roomVar);
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+                    SetupGameWorld();
+                }
+                */
+            }
+        }else// not host
         {
             // Check if the "gameStarted" variable was changed
             if (changedVars.Contains("startTime"))
@@ -448,31 +521,10 @@ public class GameManager : MonoBehaviour {
                     timeStart = currentRoom.GetVariable("startTime").GetDoubleValue();
                     Debug.Log("startTime: " + timeStart);
             }
-            // Check if map has been uploaded
-            if (changedVars.Contains("cubesInSpace") && !worldLoaded)
+            if (changedVars.Contains("gameStarted"))
             {
-                Debug.Log("ROOM cubesInSpace");
-                cubePosList = new List<Vector3>();
-                cubeRotList = new List<Vector3>();
-                ISFSArray data = room.GetVariable("cubesInSpace").GetSFSArrayValue();
-                for (int i = 0; i < data.Size(); i++)
-                {
-                    Vector3 pos = new Vector3();
-                    pos.x = data.GetSFSObject(i).GetFloat("x");
-                    pos.y = data.GetSFSObject(i).GetFloat("y");
-                    pos.z = data.GetSFSObject(i).GetFloat("z");
-                    cubePosList.Add(pos);
-
-                    Vector3 rot = new Vector3();
-                    rot.x = data.GetSFSObject(i).GetFloat("rx");
-                    rot.y = data.GetSFSObject(i).GetFloat("ry");
-                    rot.z = data.GetSFSObject(i).GetFloat("rz");
-                    cubeRotList.Add(rot);
-
-                }
-                loadWorld();
+                SetupGameWorld();
             }
-
         }
 		
     }

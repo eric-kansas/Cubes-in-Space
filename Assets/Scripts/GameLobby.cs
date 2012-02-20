@@ -241,29 +241,6 @@ public class GameLobby : MonoBehaviour
             smartFox.Send(new LogoutRequest());
         }
     }
-    private void DrawGameLobbyGUI()
-    {
-        //before creating the GUI...
-        //get and parse the variables set up from the lobby
-        List<RoomVariable> lobbyVars = currentActiveRoom.GetVariables();
-        SFSObject lobbyGameInfo = (SFSObject)((RoomVariable)lobbyVars[1]).GetSFSObjectValue();
-        //FORMAT BY INDEX
-        //0 = (bool)        gameStarted
-        //1 = (SFSObject)   gameInfo
-        //      -(string)   the host username               key: "host"
-        //      -(SFSArray) playerIds                       key: "playerIDs"
-        //      -(int)      number of Teams                 key: "numTeams"
-        //      -(SFSArray) teams                           key: "teams"
-        //      -(int)      length of the game in seconds   key: "gameLength"
-
-        //we will need the number of teams, the number of players, and the length of the game
-        int numPlayers = currentActiveRoom.MaxUsers;
-        int lengthOfGame = lobbyGameInfo.GetInt("gameLength");
-        int numTeams = lobbyGameInfo.GetInt("numTeams");
-
-        //draw the GUI
-
-    }
 
     private void DrawUsersGUI()
     {
@@ -292,14 +269,13 @@ public class GameLobby : MonoBehaviour
             if (GUI.Button(new Rect(80, 110, 85, 24), "Start Game"))
             {
 
+                //let other players know to switch rooms
                 List<RoomVariable> roomVars = new List<RoomVariable>();
                 roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                //Debug.Log("sending start");
                 smartFox.Send(new SetRoomVariablesRequest(roomVars));
 
 
                 // ****** Create the actual game ******* //
-                //let smartfox take care of error if duplicate name
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
                 String gameName = nameParts[0] + " - Game";
 
@@ -322,11 +298,17 @@ public class GameLobby : MonoBehaviour
                 //      -(int)      length of the game in seconds   key: "gameLength"
 
                 SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
-                
-				
                 settings.Variables.Add(gameInfo);
-                //get the values from the appropriate fields to populate the gameInfo
 
+                Debug.Log("numberOfPlayers: " + currentActiveRoom.UserCount);
+                SFSRoomVariable userCountVar = new SFSRoomVariable("numberOfPlayers", currentActiveRoom.UserCount);
+                settings.Variables.Add(userCountVar);
+
+                SFSArray joinedPlayers = new SFSArray();
+                SFSRoomVariable joinedVar = new SFSRoomVariable("playersJoined", joinedPlayers);
+                settings.Variables.Add(joinedVar);
+
+                //get the values from the appropriate fields to populate the gameInfo
                 smartFox.Send(new CreateRoomRequest(settings, true));
 
             }
