@@ -293,7 +293,7 @@ public class GameManager : MonoBehaviour {
 			
             whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue(); //FIX THIS, THE BUG IS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			Debug.Log("the user is not me and which color = " + whichColor);
-            int whichPos = smartFox.LastJoinedRoom.GetVariable("playerID").GetIntValue();
+            int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
 			Debug.Log("username = " + user.Name + "\tposition index = " + whichPos);
 			//Debug.Log("the colorArray length = " + colors.Count);
             cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
@@ -445,8 +445,7 @@ public class GameManager : MonoBehaviour {
             // Check if the "gameStarted" variable was changed
             if (changedVars.Contains("startTime"))
             {
-
-                    timeStart = (float)currentRoom.GetVariable("startTime").GetDoubleValue();
+                    timeStart = currentRoom.GetVariable("startTime").GetDoubleValue();
                     Debug.Log("startTime: " + timeStart);
             }
             // Check if map has been uploaded
