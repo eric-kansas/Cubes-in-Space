@@ -72,6 +72,8 @@ public class GameManager : MonoBehaviour {
     private double gameStartTime;
 	private double timeStart;
     private int playerCount;
+    private int playerInitCount;
+    public bool gameStarted = false;
 
 
     public static GameManager Instance
@@ -228,7 +230,10 @@ public class GameManager : MonoBehaviour {
         // Lock the mouse to the center
         Screen.lockCursor = true;
 
-
+        //tell server we have build the world
+        List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("builtGame", true));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
     }
 	
 	// Update is called once per frame
@@ -312,8 +317,6 @@ public class GameManager : MonoBehaviour {
             cha = Instantiate(characterPF, positions[whichColor], Quaternion.LookRotation(-positions[whichColor])) as GameObject;
 			//Debug.Log("Player looking at: " + cha.transform.forward);
 			myAvatar = cha;
-			// now that we have the player, give it to the MouseLook script
-			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
 			
 			//give him a color
 			myAvatar.GetComponent<Player>().color = colors[whichColor];
@@ -460,7 +463,6 @@ public class GameManager : MonoBehaviour {
 
     public void OnUserVariablesUpdate(BaseEvent evt)
     {
-
         //List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
         User user = (User)evt.Params["user"];
@@ -472,12 +474,27 @@ public class GameManager : MonoBehaviour {
                 Debug.Log("player count: " + playerCount);
                 if (playerCount == numberOfPlayers)
                 {
+                    Debug.Log("GAME INITING");
+                    SetupGameWorld();
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    SFSRoomVariable roomVar = new SFSRoomVariable("gameInit", true);
+                    roomVars.Add(roomVar);
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+                }
+            }
+
+            if (changedVars.Contains("builtGame"))
+            {
+                playerInitCount++;
+                Debug.Log("player init count: " + playerInitCount);
+                if (playerInitCount == numberOfPlayers)
+                {
                     Debug.Log("GAME START");
                     List<RoomVariable> roomVars = new List<RoomVariable>();
                     SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
                     roomVars.Add(roomVar);
                     smartFox.Send(new SetRoomVariablesRequest(roomVars));
-                    SetupGameWorld();
+                    gameStarted = true;
                 }
             }
         }
@@ -497,22 +514,7 @@ public class GameManager : MonoBehaviour {
 
         if (GameValues.isHost)
         {
-            if (changedVars.Contains("playersJoined"))
-            {
-                Debug.Log("current players: " + currentRoom.GetVariable("playersJoined").GetSFSArrayValue().Size());
-                Debug.Log("num play : " + numberOfPlayers);
-                /*
-                if (currentRoom.GetVariable("playersJoined").GetSFSArrayValue().Size() == numberOfPlayers)
-                {
-                    Debug.Log("GAME START");
-                    List<RoomVariable> roomVars = new List<RoomVariable>();
-                    SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
-                    roomVars.Add(roomVar);
-                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
-                    SetupGameWorld();
-                }
-                */
-            }
+
         }else// not host
         {
             // Check if the "gameStarted" variable was changed
@@ -521,13 +523,22 @@ public class GameManager : MonoBehaviour {
                     timeStart = currentRoom.GetVariable("startTime").GetDoubleValue();
                     Debug.Log("startTime: " + timeStart);
             }
-            if (changedVars.Contains("gameStarted"))
+
+            if (changedVars.Contains("gameInit"))
             {
                 SetupGameWorld();
             }
         }
-		
+
+        //both host and client
+        if (changedVars.Contains("gameStarted"))
+        {
+            gameStarted = true;
+            // now that we have the player, give it to the MouseLook script
+            Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
+        }
     }
+
 
     private void loadWorld()
     {

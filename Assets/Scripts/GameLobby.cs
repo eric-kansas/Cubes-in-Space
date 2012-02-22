@@ -313,9 +313,6 @@ public class GameLobby : MonoBehaviour
                 SFSRoomVariable joinedVar = new SFSRoomVariable("playersJoined", joinedPlayers);
                 settings.Variables.Add(joinedVar);
 
-                //get the values from the appropriate fields to populate the gameInfo
-                smartFox.Send(new CreateRoomRequest(settings, true, currentActiveRoom));
-
                 if (GameValues.isHost)
                 {
                     Debug.Log("user join room and is me and host");
@@ -324,6 +321,11 @@ public class GameLobby : MonoBehaviour
                     roomVars.Add(new SFSRoomVariable("gameStarted", true));
                     smartFox.Send(new SetRoomVariablesRequest(roomVars));
                 }
+
+                //get the values from the appropriate fields to populate the gameInfo
+                smartFox.Send(new CreateRoomRequest(settings, true, currentActiveRoom));
+
+
 
             }
         }
