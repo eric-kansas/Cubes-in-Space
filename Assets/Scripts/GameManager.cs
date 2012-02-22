@@ -230,10 +230,13 @@ public class GameManager : MonoBehaviour {
         // Lock the mouse to the center
         Screen.lockCursor = true;
 
-        //tell server we have build the world
-        List<UserVariable> userVars = new List<UserVariable>();
-        userVars.Add(new SFSUserVariable("builtGame", true));
-        smartFox.Send(new SetUserVariablesRequest(userVars));
+        if (!GameValues.isHost)
+        {
+            //tell server we have build the world
+            List<UserVariable> userVars = new List<UserVariable>();
+            userVars.Add(new SFSUserVariable("builtGame", true));
+            smartFox.Send(new SetUserVariablesRequest(userVars));
+        }
     }
 	
 	// Update is called once per frame
@@ -317,6 +320,8 @@ public class GameManager : MonoBehaviour {
             cha = Instantiate(characterPF, positions[whichColor], Quaternion.LookRotation(-positions[whichColor])) as GameObject;
 			//Debug.Log("Player looking at: " + cha.transform.forward);
 			myAvatar = cha;
+			// now that we have the player, give it to the MouseLook script
+			Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
 			
 			//give him a color
 			myAvatar.GetComponent<Player>().color = colors[whichColor];
@@ -494,7 +499,7 @@ public class GameManager : MonoBehaviour {
                     SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
                     roomVars.Add(roomVar);
                     smartFox.Send(new SetRoomVariablesRequest(roomVars));
-                    gameStarted = true;
+                    Debug.Log("after teh request sent");
                 }
             }
         }
@@ -510,11 +515,18 @@ public class GameManager : MonoBehaviour {
         Debug.Log("Changed Var contains playersJoined? " + changedVars.Contains("playersJoined"));
         Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
         Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
+        Debug.Log("Changed var contains game game init? " + changedVars.Contains("gameInit"));
 		Debug.Log("Changed var contains game startTime? " + changedVars.Contains("startTime"));
 
         if (GameValues.isHost)
         {
-
+            if (changedVars.Contains("gameInit"))
+            {
+                //tell server we have build the world
+                List<UserVariable> userVars = new List<UserVariable>();
+                userVars.Add(new SFSUserVariable("builtGame", true));
+                smartFox.Send(new SetUserVariablesRequest(userVars));
+            }
         }else// not host
         {
             // Check if the "gameStarted" variable was changed
@@ -533,10 +545,15 @@ public class GameManager : MonoBehaviour {
         //both host and client
         if (changedVars.Contains("gameStarted"))
         {
-            gameStarted = true;
-            // now that we have the player, give it to the MouseLook script
-            Camera.mainCamera.GetComponent<MouseLook>().init(myAvatar.GetComponent<Player>());
+            Debug.Log("starting the game");
+            StartGame();
         }
+    }
+
+    private void StartGame()
+    {
+        gameStarted = true;
+        myAvatar.GetComponent<Player>().gameStarted = true;
     }
 
 
