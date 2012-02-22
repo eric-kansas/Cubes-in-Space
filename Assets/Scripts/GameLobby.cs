@@ -67,6 +67,8 @@ public class GameLobby : MonoBehaviour
         smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserLeaveRoom);
         smartFox.AddEventListener(SFSEvent.USER_COUNT_CHANGE, OnUserCountChange);
         smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
+        smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserExitRoom);
+        
     }
 
     void FixedUpdate()
@@ -112,6 +114,7 @@ public class GameLobby : MonoBehaviour
         {
             //Debug.Log("is game!!!!");
 			//store my own color on server as user data
+
             List<UserVariable> uData = new List<UserVariable>();
             uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
             smartFox.Send(new SetUserVariablesRequest(uData));
@@ -133,6 +136,21 @@ public class GameLobby : MonoBehaviour
         if (user.IsItMe)
         {
 
+        }
+    }
+
+    public void OnUserExitRoom(BaseEvent evt)
+    {
+        User user = (User)evt.Params["user"];
+        messages.Add(user.Name + " has exit the room.");
+        Debug.Log("user exit");
+        if (user.IsItMe && GameValues.isHost)
+        {
+            Debug.Log("user exit and is me and host");
+            //let other players know to switch rooms
+            List<RoomVariable> roomVars = new List<RoomVariable>();
+            roomVars.Add(new SFSRoomVariable("gameStarted", true));
+            smartFox.Send(new SetRoomVariablesRequest(roomVars));
         }
     }
 
@@ -307,11 +325,6 @@ public class GameLobby : MonoBehaviour
 
                 //get the values from the appropriate fields to populate the gameInfo
                 smartFox.Send(new CreateRoomRequest(settings, true));
-
-                //let other players know to switch rooms
-                List<RoomVariable> roomVars = new List<RoomVariable>();
-                roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                smartFox.Send(new SetRoomVariablesRequest(roomVars));
 
             }
         }
