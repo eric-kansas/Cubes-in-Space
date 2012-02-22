@@ -288,6 +288,7 @@ public class GameLobby : MonoBehaviour
                 settings.MaxUsers = (short)currentActiveRoom.MaxUsers; // how many players allowed: 12
                 settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
                 settings.IsGame = true;
+                settings.MaxVariables = 15;
 
                 //get the variables set up from the lobby
                 List<RoomVariable> lobbyVars = currentActiveRoom.GetVariables();

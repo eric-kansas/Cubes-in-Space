@@ -192,11 +192,27 @@ public class Lobby : MonoBehaviour {
             
             Application.LoadLevel("Game Lobby");
             
-            //pick the team to join
-            GameValues.teamNum = (int)(GameValues.playerID / (maxPlayers / numTeams));
 
             Debug.Log("Player ID: " + GameValues.playerID);
+
+
+            int[] teamPlayerIndices;										// numTeams = 8, maxPlayers = 16
+            for (int i = 0; i < numTeams; i++)								// i = 0, j = 0, j = 1, index = 0, index = 8
+            {																// i = 1, j = 0, j = 1, index = 1, index = 9
+                teamPlayerIndices = new int[maxPlayers / numTeams];			// i = 2, j = 0, j = 1, index = 2, index = 10
+                for (int j = 0; j < maxPlayers / numTeams; j++)				
+                { 															
+                    int index = i + (j * numTeams);
+                    if (index == GameValues.playerID)
+                    {
+                        Debug.Log("here bro : " + i );
+                        GameValues.teamNum = i;
+                        break;
+                    }
+                }
+            }
             Debug.Log("Player is joining team #" + GameValues.teamNum);
+
             //store my own color on server as user data
             List<UserVariable> uData = new List<UserVariable>();
             uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
@@ -225,6 +241,7 @@ public class Lobby : MonoBehaviour {
             //int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
             playerID = idsLeft.GetInt(0);
 
+            Debug.Log("here: " + playerID);
             //update room variable 
             idsLeft.RemoveElementAt(0);
             //send back to store on server
@@ -429,7 +446,6 @@ public class Lobby : MonoBehaviour {
                 gameInfo.PutInt("numTeams", numTeams);                          //the number of teams
 
                 SFSArray teams = new SFSArray();								//ASSIGN WHICH PLAYERS GO ON WHICH TEAMS
-                int counter = 0;
                 int[] teamPlayerIndices;										// numTeams = 8, maxPlayers = 16
                 for (int i = 0; i < numTeams; i++)								// i = 0, j = 0, j = 1, index = 0, index = 8
                 {																// i = 1, j = 0, j = 1, index = 1, index = 9

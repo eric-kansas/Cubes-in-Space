@@ -137,7 +137,6 @@ public class GameManager : MonoBehaviour {
         numberOfTeams = lobbyGameInfo.GetInt("numTeams");
         numberOfPlayers = currentRoom.GetVariable("numberOfPlayers").GetIntValue();
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
-        gameLength = lobbyGameInfo.GetInt("gameLength");
 
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
 
