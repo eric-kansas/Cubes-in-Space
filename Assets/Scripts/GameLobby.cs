@@ -324,7 +324,7 @@ public class GameLobby : MonoBehaviour
                 settings.Variables.Add(joinedVar);
 
                 //get the values from the appropriate fields to populate the gameInfo
-                smartFox.Send(new CreateRoomRequest(settings, true));
+                smartFox.Send(new CreateRoomRequest(settings, true, currentActiveRoom));
 
             }
         }
@@ -369,7 +369,7 @@ public class GameLobby : MonoBehaviour
 
         if (smartFox.LastJoinedRoom == null)
         {
-            smartFox.Send(new JoinRoomRequest("The Lobby"));
+            smartFox.Send(new JoinRoomRequest("The Lobby","",currentActiveRoom.Id));
         }
     }
 }
