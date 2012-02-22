@@ -114,17 +114,6 @@ public class GameLobby : MonoBehaviour
         {
             //Debug.Log("is game!!!!");
 			//store my own color on server as user data
-
-            if(GameValues.isHost)
-            {
-                Debug.Log("user join room and is me and host");
-                //let other players know to switch rooms
-                List<RoomVariable> roomVars = new List<RoomVariable>();
-                roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                smartFox.Send(new SetRoomVariablesRequest(roomVars));
-            }
-
-
             List<UserVariable> uData = new List<UserVariable>();
             uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
             smartFox.Send(new SetUserVariablesRequest(uData));
@@ -326,6 +315,15 @@ public class GameLobby : MonoBehaviour
 
                 //get the values from the appropriate fields to populate the gameInfo
                 smartFox.Send(new CreateRoomRequest(settings, true, currentActiveRoom));
+
+                if (GameValues.isHost)
+                {
+                    Debug.Log("user join room and is me and host");
+                    //let other players know to switch rooms
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    roomVars.Add(new SFSRoomVariable("gameStarted", true));
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+                }
 
             }
         }
