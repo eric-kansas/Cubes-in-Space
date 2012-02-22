@@ -103,6 +103,9 @@ public class GameLobby : MonoBehaviour
     {
         Room room = (Room)evt.Params["room"];
         currentActiveRoom = room;
+
+        Debug.Log("onjoinroom = " + currentActiveRoom.Name);
+
         if (room.Name == "The Lobby")
             Application.LoadLevel(room.Name);
         else if (room.IsGame)
@@ -146,7 +149,7 @@ public class GameLobby : MonoBehaviour
             {
                 if (room.GetVariable("gameStarted").GetBoolValue() == true)
                 {
-                    Debug.Log("Game started");
+                    Debug.Log("Game started in room vars");
                     String[] nameParts = this.currentActiveRoom.Name.Split('-');
                     Debug.Log(nameParts[0] + " - Game");
                     smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game", "", CurrentActiveRoom.Id));
@@ -269,12 +272,6 @@ public class GameLobby : MonoBehaviour
             if (GUI.Button(new Rect(80, 110, 85, 24), "Start Game"))
             {
 
-                //let other players know to switch rooms
-                List<RoomVariable> roomVars = new List<RoomVariable>();
-                roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                smartFox.Send(new SetRoomVariablesRequest(roomVars));
-
-
                 // ****** Create the actual game ******* //
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
                 String gameName = nameParts[0] + " - Game";
@@ -310,6 +307,11 @@ public class GameLobby : MonoBehaviour
 
                 //get the values from the appropriate fields to populate the gameInfo
                 smartFox.Send(new CreateRoomRequest(settings, true));
+
+                //let other players know to switch rooms
+                List<RoomVariable> roomVars = new List<RoomVariable>();
+                roomVars.Add(new SFSRoomVariable("gameStarted", true));
+                smartFox.Send(new SetRoomVariablesRequest(roomVars));
 
             }
         }
