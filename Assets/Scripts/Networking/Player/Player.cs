@@ -25,7 +25,7 @@ public class Player : MonoBehaviour {
     private Cube pCubeScript;
 	
 	public bool isFlying = false;
-	public float switchDelay = 0.75f;	// delay for switching camera scripts
+	public float switchDelay = 0.5f;	// delay for switching camera scripts
 	
 	
 	//movement variables
@@ -172,7 +172,7 @@ public class Player : MonoBehaviour {
 
                     //set camera
 
-                    StartCoroutine("CameraSwitch",1.0f);
+                    StartCoroutine("CameraSwitch",switchDelay);
                 
 	                //Camera.main.ScreenPointToRay(-normal);
 	                //Debug.Log("normal: " + hit.normal);
