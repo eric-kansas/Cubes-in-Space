@@ -372,6 +372,7 @@ public class GameManager : MonoBehaviour {
         smartFox.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
     }
 
+
     private void OnExtensionResponse(BaseEvent evt)
     {
         try
@@ -443,6 +444,7 @@ public class GameManager : MonoBehaviour {
         Screen.lockCursor = false;
         Screen.showCursor = true;
 		Debug.Log("Connection lost... Returning to lobby");
+        currentRoom = null;
         Application.LoadLevel("The Lobby");
     }
 
