@@ -18,7 +18,8 @@ public class Player : MonoBehaviour {
     private Vector3 normal;
 	public Color color;
 
-	public GUIText guiText; 	//draws the distance to the target
+	private GUIText distGUI; 	//draws the distance to the target
+    private GUITexture crosshairGUI;
     private PlayerGUI myGUI;
     private List<int> owners;
     private GameObject parentCube;
@@ -49,7 +50,9 @@ public class Player : MonoBehaviour {
         //GUI initializers
         owners = new List<int>();
         myGUI = this.GetComponent<PlayerGUI>();
-		guiText = (GUIText)GameObject.Find("GUI Text").GetComponent<GUIText>();
+        distGUI = (GUIText)GameObject.Find("GUI Text Distance").GetComponent<GUIText>();
+        crosshairGUI = (GUITexture)GameObject.Find("Crosshair Outer").GetComponent<GUITexture>();
+        crosshairGUI.color = color;
 	}
 
     // Update is called once per frame
@@ -70,8 +73,7 @@ public class Player : MonoBehaviour {
 			    //draw some stuff the the screen
                 if (targetObject.CompareTag("Paintable"))
                 {
-                    guiText.material.color = new Color(color.r, color.g, color.b);
-                    guiText.text = "Distance: " + Mathf.Round(distance);
+                    distGUI.text = Mathf.Round(distance) + "m";
 
                     parentCube = targetObject.transform.parent.gameObject;
                     pCubeScript = parentCube.GetComponent<Cube>();
@@ -85,8 +87,7 @@ public class Player : MonoBehaviour {
                 }
                 else
                 {
-                    guiText.material.color = new Color(255, 255, 255);
-                    guiText.text = "Distance: " + Mathf.Round(distance);
+                    distGUI.text = Mathf.Round(distance) + "m";
                     myGUI.updateColors(false);
                 }
                 didHit = true;

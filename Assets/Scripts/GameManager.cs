@@ -67,11 +67,13 @@ public class GameManager : MonoBehaviour {
     string host;
     int numberOfPlayers;
     int numberOfTeams;
+    int activeTeams;
     SFSArray teams;
     int gameLength;
 
     private double gameStartTime;
 	private double timeStart;
+
     private int playerCount;
     private int playerInitCount;
     public bool gameStarted = false;
@@ -138,6 +140,39 @@ public class GameManager : MonoBehaviour {
         host = lobbyGameInfo.GetUtfString("host");
         numberOfTeams = lobbyGameInfo.GetInt("numTeams");
         numberOfPlayers = currentRoom.GetVariable("numberOfPlayers").GetIntValue();
+
+        if (numberOfPlayers < 8)
+        {
+            switch (numberOfPlayers % 8)
+            {
+                case 1:
+                    activeTeams = 1;
+                    break;
+                case 2:
+                    activeTeams = 2;
+                    break;
+                case 3:
+                    activeTeams = 3;
+                    break;
+                case 4:
+                    activeTeams = 4;
+                    break;
+                case 5:
+                    activeTeams = 5;
+                    break;
+                case 6:
+                    activeTeams = 6;
+                    break;
+                case 7:
+                    activeTeams = 7;
+                    break;
+            }
+        }
+        else
+        {
+            activeTeams = 8;
+        }
+
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
 
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
@@ -275,10 +310,39 @@ public class GameManager : MonoBehaviour {
 		
 		//display the score
 		string scoreMessage = "";
-		for (int i = 0; i < teamScores.Count; i++)
+		//for (int i = 0; i < teamScores.Count; i++)
+        for (int i = 0; i < (numberOfPlayers); i++)
 		{
-			
-			scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";	
+            switch (i)
+            {
+                case 0:
+                    scoreMessage += "Red: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 1:
+                    scoreMessage += "Blue: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 2:
+                    scoreMessage += "Green: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 3:
+                    scoreMessage += "Purple: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 4:
+                    scoreMessage += "Yellow: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 5:
+                    scoreMessage += "Orange: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 6:
+                    scoreMessage += "Pink: " + teamScores[i].ToString() + "\n";
+                    break;
+                case 7:
+                    scoreMessage += "Teal: " + teamScores[i].ToString() + "\n";
+                    break;
+                default:
+                    break;
+            }
+			//scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";
 		}
 		
 		scoresText.text = scoreMessage;
