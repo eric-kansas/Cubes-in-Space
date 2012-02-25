@@ -27,7 +27,9 @@ public class GameLobby : MonoBehaviour
     //keep track of room we're in
     private Room currentActiveRoom;
     public Room CurrentActiveRoom { get { return currentActiveRoom; } }
-
+	private bool tryJoiningRoom;
+	
+	
     private Vector2 roomScrollPosition, userScrollPosition, chatScrollPosition;
     private int roomSelection = -1;	  //For clicking on list box 
     private string[] roomNameStrings; //Names of rooms
@@ -74,6 +76,7 @@ public class GameLobby : MonoBehaviour
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
 
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
+		tryJoiningRoom = false;
     }
 
     private void AddEventListeners()
@@ -169,9 +172,18 @@ public class GameLobby : MonoBehaviour
     public void OnJoinRoomError(BaseEvent evt)
     {
         Debug.Log("Error joining room: " + evt.Params["message"]);
-        String[] nameParts = this.currentActiveRoom.Name.Split('-');
-        smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game", "", CurrentActiveRoom.Id));
-    }
+        if (tryJoiningRoom)
+		{
+			String[] nameParts = this.currentActiveRoom.Name.Split('-');
+        	smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
+			//Debug.Log("Attempting to join room named " + nameParts[0].Trim() + " - Game");
+			//tryJoiningRoom = false;
+		}
+		else
+		{
+			//smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
+		}
+	}
 
     public void OnUserEnterRoom(BaseEvent evt)
     {
@@ -260,8 +272,9 @@ public class GameLobby : MonoBehaviour
                 {
                     Debug.Log("Game started in room vars");
                     String[] nameParts = this.currentActiveRoom.Name.Split('-');
-                    smartFox.Send(new JoinRoomRequest(nameParts[0] + " - Game", "", CurrentActiveRoom.Id));
-                    Debug.Log(nameParts[0] + " - Game");
+                    smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
+                    Debug.Log(nameParts[0].Trim() + " - Game");
+					tryJoiningRoom = true;
                 }
                 else
                 {
@@ -432,8 +445,9 @@ public class GameLobby : MonoBehaviour
 
                 // ****** Create the actual game ******* //
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
-                String gameName = nameParts[0] + " - Game";
-
+                String gameName = nameParts[0].Trim() + " - Game";
+				Debug.Log("Host created game named: " + gameName);
+				
                 RoomSettings settings = new RoomSettings(gameName);
                 settings.MaxUsers = (short)currentActiveRoom.MaxUsers; // how many players allowed: 12
                 settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);

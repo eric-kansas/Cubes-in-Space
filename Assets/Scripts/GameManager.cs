@@ -55,6 +55,7 @@ public class GameManager : MonoBehaviour {
     private static GameManager instance;
     private bool worldLoaded = false;
 	private bool firstTime = true;
+	private bool tryJoiningRoom = false;
 
     SFSObject lobbyGameInfo;
 
@@ -121,6 +122,7 @@ public class GameManager : MonoBehaviour {
             smartFox = new SmartFox(debug);
         }
         currentRoom = smartFox.LastJoinedRoom;
+		Debug.Log("Current Room = " + currentRoom.Name);
         clientName = smartFox.MySelf.Name;
 
         // set up arrays of positions 
@@ -247,18 +249,27 @@ public class GameManager : MonoBehaviour {
 		//display the time
 		//client timeStamp - startTime = timePast in milliseconds
 		if(!firstTime){
+			
 			double timePast = TimeManager.Instance.ClientTimeStamp - timeStart;
 			double timeLeft = gameLength - timePast;
 			timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
-
+			//Debug.Log("Updating Time: " + timeLeft);
+			
 			//Debug.Log("((float) TimeManager.Instance.ClientTimeStamp): " + TimeManager.Instance.ClientTimeStamp);
 			//Debug.Log("timeStart: " + timeStart);
 			
-			if (timeLeft <= 0)
+			if (GameValues.isHost && timeLeft <= 0)
 			{
 				//leave the game room
-				smartFox.Send(new JoinRoomRequest("The Lobby", "", currentRoom.Id));
-				//smartFox.Send(new LeaveRoomRequest(currentRoom.Name));
+				string postGameScreen = host.Trim() + " - Room";
+				Debug.Log("Joining the post game screen: " + postGameScreen);
+				smartFox.Send(new JoinRoomRequest(postGameScreen, "", currentRoom.Id));
+				//Application.LoadLevel("Game Lobby");
+				tryJoiningRoom = true;
+				Screen.lockCursor = false;
+       		 	Screen.showCursor = true;
+				
+				//pass some room variables that talk about the scores
 			}
 		}
 		
@@ -359,17 +370,18 @@ public class GameManager : MonoBehaviour {
     {
         // listen for an smartfox events 
         smartFox.RemoveAllEventListeners();
-
-        smartFox.AddEventListener(SFSEvent.USER_ENTER_ROOM, OnUserEnterRoom);
-        smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, OnUserLeaveRoom);
-        smartFox.AddEventListener(SFSEvent.USER_COUNT_CHANGE, OnUserCountChange);
-        smartFox.AddEventListener(SFSEvent.CONNECTION_LOST, OnConnectionLost);
+		
+		smartFox.AddEventListener(SFSEvent.ROOM_JOIN, 			OnJoinRoom);
+        smartFox.AddEventListener(SFSEvent.USER_ENTER_ROOM, 	OnUserEnterRoom);
+        smartFox.AddEventListener(SFSEvent.USER_EXIT_ROOM, 		OnUserLeaveRoom);
+        smartFox.AddEventListener(SFSEvent.USER_COUNT_CHANGE, 	OnUserCountChange);
+        smartFox.AddEventListener(SFSEvent.CONNECTION_LOST, 	OnConnectionLost);
         smartFox.AddEventListener(SFSEvent.SPECTATOR_TO_PLAYER, OnSpectatorToPlayer);
-        smartFox.AddEventListener(SFSEvent.SPECTATOR_TO_PLAYER_ERROR, OnSpectatorToPlayerError);
-        smartFox.AddEventListener(SFSEvent.OBJECT_MESSAGE, OnObjectMessageReceived);
-        smartFox.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, OnUserVariablesUpdate);
-        smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, OnRoomVariablesUpdate);
-        smartFox.AddEventListener(SFSEvent.EXTENSION_RESPONSE, OnExtensionResponse);
+        smartFox.AddEventListener(SFSEvent.SPECTATOR_TO_PLAYER_ERROR, 	OnSpectatorToPlayerError);
+        smartFox.AddEventListener(SFSEvent.OBJECT_MESSAGE, 				OnObjectMessageReceived);
+        smartFox.AddEventListener(SFSEvent.USER_VARIABLES_UPDATE, 		OnUserVariablesUpdate);
+        smartFox.AddEventListener(SFSEvent.ROOM_VARIABLES_UPDATE, 		OnRoomVariablesUpdate);
+        smartFox.AddEventListener(SFSEvent.EXTENSION_RESPONSE, 			OnExtensionResponse);
     }
 
 
@@ -383,8 +395,9 @@ public class GameManager : MonoBehaviour {
             {
                 HandleServerTime(dt);
             }
-            /*
-			if(firstTime){
+            
+			if(firstTime)
+			{
 				//is host
 				if(GameValues.isHost){
 					//add the start time to the room variables
@@ -398,11 +411,11 @@ public class GameManager : MonoBehaviour {
 					Debug.Log("Start time of the game: " + gameStartTime);
 				 	timeStart = (float)gameStartTime;
 					Debug.Log("Start time of the game timeStart: " + timeStart);
+					
+					firstTime = false;
 				}
-				
-				firstTime = false;
 			}
-             */
+             
         }
         catch (Exception e)
         {
@@ -416,9 +429,57 @@ public class GameManager : MonoBehaviour {
         //Debug.Log("server time");
         long time = dt.GetLong("t");
         TimeManager.Instance.Synchronize(Convert.ToDouble(time));
+		Debug.Log("Syncronizing to time: " + time.ToString());
     }
+	
+	
+	public void OnJoinRoom(BaseEvent evt)
+    {
+        Room room = (Room)evt.Params["room"];
+        currentRoom = room;
 
+        Debug.Log("onjoinroom = " + currentRoom.Name);
+		
+		//unlock the mouse
+		Screen.lockCursor = false;
+        Screen.showCursor = true;
+		
+        if (room.Name == "The Lobby")
+        {
+            //smartFox.RemoveAllEventListeners();
+            Debug.Log("onjoinroom = " + smartFox.LastJoinedRoom.Name);
+            Application.LoadLevel("The Lobby");
+        }
+        else if (room.IsGame)
+        {
+			//this is the game, so it should never actually happen
+			Debug.Log("This is the game and should be loaded");
+		}
+        else
+        {
+            Debug.Log("GameRoom- OnJoinRoom: joined " + room.Name);
+            Application.LoadLevel("Game Lobby");
+            Debug.Log("loading Game Lobby");
+            //smartFox.Send(new SpectatorToPlayerRequest());
+        }
+    }
     // when user enters room, we send our transform so they can update us
+	
+	public void OnJoinRoomError(BaseEvent evt)
+    {
+        Debug.Log("Error joining room: " + evt.Params["message"]);
+        if (tryJoiningRoom)
+		{
+			string postGameRoomName = host.Trim() + " - Room";
+        	smartFox.Send(new JoinRoomRequest(postGameRoomName, "", currentRoom.Id));
+			//Debug.Log("Attempting to join room named " + nameParts[0].Trim() + " - Game");
+			//tryJoiningRoom = false;
+		}
+		else
+		{
+			//smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
+		}
+	}
     public void OnUserEnterRoom(BaseEvent evt)
     {
         User user = (User)evt.Params["user"];
@@ -426,11 +487,44 @@ public class GameManager : MonoBehaviour {
         //NetworkLaunchMessageSender sender = myAvatar.GetComponent<NetworkLaunchMessageSender>();
         //sender.SendLaunchOnRequest();
     }
+	
+	
 
     private void OnUserLeaveRoom(BaseEvent evt)
     {
         //remove this user from our world and update our data structures
         User user = (User)evt.Params["user"];
+		Debug.Log("A user left! His name is: " + user.Name);
+		Debug.Log("The host's name is: " + host);
+		
+		//check if it was the host that left
+		if (user.Name == host)
+		{
+			Debug.Log("The user that left was the host");
+			//check if because the game was over
+			//parse the time text
+			int indexOfSpace = timeText.text.IndexOf(": ");
+			string theTimeNumber = timeText.text.Substring(indexOfSpace + 1).Trim(); //get rid of leading and trailing spaces
+			Debug.Log("Time left in the game: " + theTimeNumber);
+			int timeLeft = Int32.Parse(theTimeNumber);
+			
+			if (timeLeft < 5)
+			{
+				//if game is over
+				//move to game lobby
+				string postGameRoomName = user.Name.Trim() + " - Room";
+				smartFox.Send(new JoinRoomRequest(postGameRoomName, "", currentRoom.Id));
+				tryJoiningRoom = true;
+				//Application.LoadLevel("Game Lobby");
+			}
+			else
+			{
+				//if game ! over, the host must have DC'd
+				//return to lobby
+				smartFox.Send(new JoinRoomRequest("The Lobby", "", currentRoom.Id));
+				//Application.LoadLevel("The Lobby");
+			}
+		}
     }
     public void OnUserCountChange(BaseEvent evt)
     {
@@ -513,11 +607,11 @@ public class GameManager : MonoBehaviour {
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
 
-        Debug.Log("Changed Var contains playersJoined? " + changedVars.Contains("playersJoined"));
-        Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
-        Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
-        Debug.Log("Changed var contains game game init? " + changedVars.Contains("gameInit"));
-		Debug.Log("Changed var contains game startTime? " + changedVars.Contains("startTime"));
+        //Debug.Log("Changed Var contains playersJoined? " + changedVars.Contains("playersJoined"));
+        //Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
+        //Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
+        //Debug.Log("Changed var contains game game init? " + changedVars.Contains("gameInit"));
+		//Debug.Log("Changed var contains game startTime? " + changedVars.Contains("startTime"));
 
         if (GameValues.isHost)
         {
@@ -528,15 +622,9 @@ public class GameManager : MonoBehaviour {
                 userVars.Add(new SFSUserVariable("builtGame", true));
                 smartFox.Send(new SetUserVariablesRequest(userVars));
             }
-        }else// not host
+        }
+		else// not host
         {
-            // Check if the "gameStarted" variable was changed
-            if (changedVars.Contains("startTime"))
-            {
-                    timeStart = currentRoom.GetVariable("startTime").GetDoubleValue();
-                    Debug.Log("startTime: " + timeStart);
-            }
-
             if (changedVars.Contains("gameInit"))
             {
                 SetupGameWorld();
@@ -548,6 +636,13 @@ public class GameManager : MonoBehaviour {
         {
             Debug.Log("starting the game");
             StartGame();
+        }
+			    // Check if the "gameStarted" variable was changed
+        if (changedVars.Contains("startTime"))
+        {
+            timeStart = currentRoom.GetVariable("startTime").GetDoubleValue();
+            firstTime = false;    
+			Debug.Log("startTime: " + timeStart);
         }
     }
 

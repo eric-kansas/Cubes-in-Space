@@ -486,27 +486,7 @@ public class Lobby : MonoBehaviour {
             GUILayout.Label("No rooms available to join");
         }
         GUILayout.EndArea();
-
-
-        GUI.Box(new Rect(screenW - 200, 260, 180, 130), "Room List");
-        GUILayout.BeginArea(new Rect(screenW - 190, 290, 180, 150));
-        if (smartFox.RoomList.Count >= 1)
-        {
-            roomScrollPosition = GUILayout.BeginScrollView(roomScrollPosition, GUILayout.Width(180), GUILayout.Height(130));
-            roomSelection = GUILayout.SelectionGrid(roomSelection, roomFullStrings, 1);
-
-            if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
-            {
-                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection], "", CurrentActiveRoom.Id));
-            }
-            GUILayout.EndScrollView();
-
-        }
-        else
-        {
-            GUILayout.Label("No rooms available to join");
-        }
-        GUILayout.EndArea();
+      
     }
 
     private void DrawChatGUI(Rect screenPos)
@@ -546,7 +526,7 @@ public class Lobby : MonoBehaviour {
 		List<Room> allRooms = smartFox.RoomManager.GetRoomList();
 		
 		foreach (Room room in allRooms) {
-            if (!room.IsGame && room.UserCount > 0)
+            if (!room.IsGame && room.UserCount > 0 && room.Name != "The Lobby")
             {
                 rooms.Add(room.Name);
                 roomsFull.Add(room.Name + " (" + room.UserCount + "/" + room.MaxUsers + ")");
