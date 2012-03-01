@@ -140,39 +140,6 @@ public class GameManager : MonoBehaviour {
         host = lobbyGameInfo.GetUtfString("host");
         numberOfTeams = lobbyGameInfo.GetInt("numTeams");
         numberOfPlayers = currentRoom.GetVariable("numberOfPlayers").GetIntValue();
-
-        if (numberOfPlayers < 8)
-        {
-            switch (numberOfPlayers % 8)
-            {
-                case 1:
-                    activeTeams = 1;
-                    break;
-                case 2:
-                    activeTeams = 2;
-                    break;
-                case 3:
-                    activeTeams = 3;
-                    break;
-                case 4:
-                    activeTeams = 4;
-                    break;
-                case 5:
-                    activeTeams = 5;
-                    break;
-                case 6:
-                    activeTeams = 6;
-                    break;
-                case 7:
-                    activeTeams = 7;
-                    break;
-            }
-        }
-        else
-        {
-            activeTeams = 8;
-        }
-
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
 
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
@@ -251,7 +218,7 @@ public class GameManager : MonoBehaviour {
         {
             if (!currentRoom.UserList[i].IsItMe)
             {
-                if (currentRoom.UserList[i].GetVariable("playerTeam") != null)
+                if (currentRoom.UserList[i].GetVariable("playerTeam") != null && currentRoom.UserList[i].GetVariable("playerID") != null)
                 {
                     Debug.Log("Player variable exists, making character..");
                     MakeCharacter(currentRoom.UserList[i]);
@@ -283,15 +250,16 @@ public class GameManager : MonoBehaviour {
 		
 		//display the time
 		//client timeStamp - startTime = timePast in milliseconds
-		if(!firstTime){
+		if(!firstTime)
+        {
 			
 			double timePast = TimeManager.Instance.ClientTimeStamp - timeStart;
 			double timeLeft = gameLength - timePast;
 			timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
 			//Debug.Log("Updating Time: " + timeLeft);
 			
-			//Debug.Log("((float) TimeManager.Instance.ClientTimeStamp): " + TimeManager.Instance.ClientTimeStamp);
-			//Debug.Log("timeStart: " + timeStart);
+		    Debug.Log("((float) TimeManager.Instance.ClientTimeStamp): " + TimeManager.Instance.ClientTimeStamp);
+			Debug.Log("timeStart: " + timeStart);
 			
 			if (GameValues.isHost && timeLeft <= 0)
 			{
@@ -305,47 +273,50 @@ public class GameManager : MonoBehaviour {
        		 	Screen.showCursor = true;
 				
 				//pass some room variables that talk about the scores
-			}
-		}
-		
-		//display the score
-		string scoreMessage = "";
-		//for (int i = 0; i < teamScores.Count; i++)
-        for (int i = 0; i < (numberOfPlayers); i++)
-		{
-            switch (i)
+                //display the score
+                
+		    }
+            string scoreMessage = "";
+            //for (int i = 0; i < teamScores.Count; i++)
+            for (int i = 0; i < numberOfTeams; i++)
             {
-                case 0:
-                    scoreMessage += "Red: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 1:
-                    scoreMessage += "Blue: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 2:
-                    scoreMessage += "Green: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 3:
-                    scoreMessage += "Purple: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 4:
-                    scoreMessage += "Yellow: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 5:
-                    scoreMessage += "Orange: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 6:
-                    scoreMessage += "Pink: " + teamScores[i].ToString() + "\n";
-                    break;
-                case 7:
-                    scoreMessage += "Teal: " + teamScores[i].ToString() + "\n";
-                    break;
-                default:
-                    break;
+                switch (i)
+                {
+                    case 0:
+                        scoreMessage += "Red: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 1:
+                        scoreMessage += "Blue: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 2:
+                        scoreMessage += "Green: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 3:
+                        scoreMessage += "Purple: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 4:
+                        scoreMessage += "Yellow: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 5:
+                        scoreMessage += "Orange: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 6:
+                        scoreMessage += "Pink: " + teamScores[i].ToString() + "\n";
+                        break;
+                    case 7:
+                        scoreMessage += "Teal: " + teamScores[i].ToString() + "\n";
+                        break;
+                    default:
+                        break;
+                }
             }
+            scoresText.text = scoreMessage;
+		
+		
 			//scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";
 		}
 		
-		scoresText.text = scoreMessage;
+		
 		
         if (Input.GetMouseButtonDown(0))
         {
@@ -363,7 +334,6 @@ public class GameManager : MonoBehaviour {
     }
 
  
-
     public void TimeSyncRequest()
     {
         ExtensionRequest request = new ExtensionRequest("getTime", new SFSObject(), currentRoom);
@@ -387,6 +357,7 @@ public class GameManager : MonoBehaviour {
         GameObject cha;
         if (user.IsItMe)
         {
+            int whichPos = GameValues.playerID;
             whichColor = GameValues.teamNum;
             if (whichColor == -1)
                 Debug.Log("-1 fault in color picker");
@@ -402,13 +373,7 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
-			Debug.Log("Finding the Null object within Make Character function...");
-			Debug.Log("-smartfox " + smartFox.ToString());
-			Debug.Log("-last joined room " + smartFox.LastJoinedRoom.ToString());
-			Debug.Log("-get user by name " +smartFox.LastJoinedRoom.GetUserByName(user.Name).ToString());
-			Debug.Log("-get variable " + smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").ToString()); //the player variables seem to be broken
-			Debug.Log("-get int value " + smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue().ToString());
-			
+
             whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue(); //FIX THIS, THE BUG IS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			Debug.Log("the user is not me and which color = " + whichColor);
             int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
@@ -426,8 +391,6 @@ public class GameManager : MonoBehaviour {
         ch.IsMe = user.IsItMe;
         ch.SmartFoxUser = user;
 		
-		//look at the center of the arena and get ready to go
-		//ch.transform.LookAt(new Vector3(0,0,0));
     }
 
     void SetupListeners()
@@ -458,28 +421,7 @@ public class GameManager : MonoBehaviour {
             if (cmd == "time")
             {
                 HandleServerTime(dt);
-            }
-            
-			if(firstTime)
-			{
-				//is host
-				if(GameValues.isHost){
-					//add the start time to the room variables
-					List<RoomVariable> st = new List<RoomVariable>();
-					gameStartTime = TimeManager.Instance.ClientTimeStamp;
-					
-					SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
-					st.Add(startTime);
-					smartFox.Send(new SetRoomVariablesRequest(st));
-				
-					Debug.Log("Start time of the game: " + gameStartTime);
-				 	timeStart = (float)gameStartTime;
-					Debug.Log("Start time of the game timeStart: " + timeStart);
-					
-					firstTime = false;
-				}
-			}
-             
+            }             
         }
         catch (Exception e)
         {
@@ -576,6 +518,7 @@ public class GameManager : MonoBehaviour {
 			{
 				//if game is over
 				//move to game lobby
+                Debug.Log("ehrekhrl");
 				string postGameRoomName = user.Name.Trim() + " - Room";
 				smartFox.Send(new JoinRoomRequest(postGameRoomName, "", currentRoom.Id));
 				tryJoiningRoom = true;
@@ -654,9 +597,15 @@ public class GameManager : MonoBehaviour {
                 if (playerInitCount == numberOfPlayers)
                 {
                     Debug.Log("GAME START");
+                    //add the start time to the room variables
                     List<RoomVariable> roomVars = new List<RoomVariable>();
+                    gameStartTime = TimeManager.Instance.ClientTimeStamp;
+
+                    SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
                     SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
+                    roomVars.Add(startTime);
                     roomVars.Add(roomVar);
+                    timeStart = (float)gameStartTime;
                     smartFox.Send(new SetRoomVariablesRequest(roomVars));
                     Debug.Log("after teh request sent");
                 }

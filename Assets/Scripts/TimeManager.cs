@@ -16,7 +16,7 @@ public class TimeManager : MonoBehaviour {
 		
 	private float lastRequestTime = float.MaxValue;
 	private float timeBeforeSync = 0;
-	private bool synchronized = false;
+	public bool synchronized = false;
 		
 	private double lastServerTime = 0;
 	private double lastLocalTime = 0;
@@ -40,7 +40,7 @@ public class TimeManager : MonoBehaviour {
 		pingValueIndex = 0;
 		running = true;
 		GameManager.Instance.TimeSyncRequest();
-        Debug.Log("here openinged");
+        timeBeforeSync = Time.time;
 	}
 		
 	public void Synchronize(double timeValue) {

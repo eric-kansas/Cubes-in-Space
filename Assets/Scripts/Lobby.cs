@@ -40,7 +40,7 @@ public class Lobby : MonoBehaviour {
 	private int screenW;
 
     private int maxPlayers = 16;
-    private int numTeams = 8;
+    private int numTeams = 2;
 
     private bool createdMyRoom = false;
 	
@@ -364,7 +364,7 @@ public class Lobby : MonoBehaviour {
                 }
 
                 // ****** Create new room ******* //
-                int gameLength = 120; //time in seconds
+                int gameLength = 10; //time in seconds
 
                 //let smartfox take care of error if duplicate name
                 RoomSettings settings = new RoomSettings(username + " - Room");
