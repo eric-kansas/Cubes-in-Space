@@ -395,13 +395,18 @@ public class GameLobby : MonoBehaviour
         if(GameValues.isHost)
             currentTeams[playerTeamIndex]++;
         smartFox.Send(new ObjectMessageRequest(data));
+        for (int i = numberOfTeams; i >= 0; i--)
+        {
+            Debug.Log("team " + i + ": " + currentTeams[i]);
+        }
+        
     }
 
     private int findLowestNumTeam()
     {
         int lowest = 25;
         int returnIndex = 0;
-        for (int i = 0; i < numberOfTeams; i++)
+        for (int i = numberOfTeams; i >= 0; i--)
         {
             if (currentTeams[i] < lowest)
             {
