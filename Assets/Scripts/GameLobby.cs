@@ -37,6 +37,7 @@ public class GameLobby : MonoBehaviour
     private int screenW;
 
     private SFSArray currentIDs = new SFSArray();
+    private int[] currentTeams;
 
     SFSObject lobbyGameInfo;
     string host;
@@ -48,34 +49,41 @@ public class GameLobby : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("start game lobby");
         smartFox = SmartFoxConnection.Connection;
         currentActiveRoom = smartFox.LastJoinedRoom;
-        Debug.Log("last joined room: " + currentActiveRoom);
+
         smartFox.AddLogListener(LogLevel.INFO, OnDebugMessage);
         screenW = Screen.width;
         AddEventListeners();
+
         username = smartFox.MySelf.Name;
-        if (GameValues.isHost)
-        {
-            currentIDs.AddInt(0);
-            GameValues.playerID = 0;
-            GameValues.teamNum = 0;
-
-            List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
-            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-            smartFox.Send(new SetUserVariablesRequest(uData));
-        }
-
 
         lobbyGameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
 
         maxPlayers = currentActiveRoom.MaxUsers;
         host = lobbyGameInfo.GetUtfString("host");
         numberOfTeams = lobbyGameInfo.GetInt("numTeams");
+
+        if (GameValues.isHost)
+            currentTeams = new int[numberOfTeams];
+
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
 
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
+
+        if (GameValues.isHost)
+        {
+            currentIDs.AddInt(0);
+            GameValues.playerID = 0;
+            GameValues.teamNum = 0;
+            currentTeams[0]++;
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
+            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
+        }
+
 		tryJoiningRoom = false;
     }
 
@@ -202,7 +210,7 @@ public class GameLobby : MonoBehaviour
         //messages.Add(user.Name + " has exit the room.");
         if(GameValues.isHost)
         {
-            RemovePlayerID(user.GetVariable("playerID").GetIntValue());
+            RemovePlayer(user.GetVariable("playerID").GetIntValue(), user.GetVariable("playerTeam").GetIntValue());
         }
     }
 
@@ -227,23 +235,8 @@ public class GameLobby : MonoBehaviour
                      
                 Debug.Log("Player ID: " + GameValues.playerID);
 
-                //setup teams
-                int[] teamPlayerIndices;										// numTeams = 8, maxPlayers = 16
-                for (int i = 0; i < numberOfTeams; i++)								// i = 0, j = 0, j = 1, index = 0, index = 8
-                {																// i = 1, j = 0, j = 1, index = 1, index = 9
-                    teamPlayerIndices = new int[maxPlayers / numberOfTeams];			// i = 2, j = 0, j = 1, index = 2, index = 10
-                    for (int j = 0; j < maxPlayers / numberOfTeams; j++)				
-                    {
-                        int index = i + (j * numberOfTeams);
-                        if (index == GameValues.playerID)
-                        {
-                            GameValues.teamNum = i;
-                            break;
-                        }
-                    }
-                }
+                GameValues.teamNum = data.GetInt("team");
                 Debug.Log("Player is joining team #" + GameValues.teamNum);
-
 
                 //store player id and team as user data
                 List<UserVariable> uData = new List<UserVariable>();
@@ -252,8 +245,6 @@ public class GameLobby : MonoBehaviour
                 smartFox.Send(new SetUserVariablesRequest(uData));
             }
         }
-
-
     }
 	
 
@@ -388,17 +379,34 @@ public class GameLobby : MonoBehaviour
         SFSObject data = new SFSObject();
         data.PutUtfString("name", user);
         data.PutInt("id", currentIDs.Size() - 1);
+
+        int playerTeamIndex = findLowestNumTeam();
+        data.PutInt("team", playerTeamIndex);
+        if(GameValues.isHost)
+            currentTeams[playerTeamIndex]++;
         smartFox.Send(new ObjectMessageRequest(data));
-            
     }
 
-    private void RemovePlayerID(int id)
+    private int findLowestNumTeam()
+    {
+        int lowest = 25;
+        int returnIndex = 0;
+        for (int i = 0; i < numberOfTeams; i++)
+        {
+            if (currentTeams[i] < lowest)
+            {
+                lowest = currentTeams[i];
+                returnIndex= i;
+            }
+        }
+        return returnIndex;
+    }
+
+    private void RemovePlayer(int id, int teamId)
     {
         SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
-        //Debug.Log("\t-Getting the ids that are left");
         SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
-        //Debug.Log("ya :" + idsLeft.Size());
-        //int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
+
         //update room variable 
         SFSArray returnInts = new SFSArray();
         returnInts.AddInt(GameValues.playerID);
@@ -408,6 +416,17 @@ public class GameLobby : MonoBehaviour
             returnInts.AddInt(idsLeft.GetInt(i));
             Debug.Log("here in stuff: " + returnInts.GetInt(i + 1));
         }
+
+        for (int i = 0; i < currentIDs.Size(); i++)
+        {
+            if (currentIDs.GetInt(i) == id)
+            {
+                currentIDs.RemoveElementAt(i);
+                break;
+            }
+        }
+        
+        currentTeams[teamId]--;
 
         //send back to store on server
         List<RoomVariable> rData = new List<RoomVariable>();

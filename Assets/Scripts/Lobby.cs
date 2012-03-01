@@ -222,54 +222,6 @@ public class Lobby : MonoBehaviour {
 
         //Debug.Log("\t-end OnJoinRoom funtion");
 	}
-
-    private int GetPlayerID(User user)
-    {
-        int playerID = -1;
-
-        Debug.Log("GetPlayerID function: Is the user me? " + user.IsItMe);
-
-        if (user.IsItMe)
-        {
-
-            //assign a new color
-            //first get a copy of available numbers, which is a room variable
-            //Debug.Log("\t-Getting gameInfo");
-            SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
-            //Debug.Log("\t-Getting the ids that are left");
-            SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
-            //Debug.Log("ya :" + idsLeft.Size());
-            //int ran = UnityEngine.Random.Range(0, idsLeft.Size() - 1);
-            playerID = idsLeft.GetInt(0);
-
-            Debug.Log("here: " + playerID);
-            //update room variable 
-            idsLeft.RemoveElementAt(0);
-            //send back to store on server
-            List<RoomVariable> rData = new List<RoomVariable>();
-            gameInfo.PutSFSArray("playerIDs", idsLeft);
-            rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
-            smartFox.Send(new SetRoomVariablesRequest(rData));
-
-            //store my own color on server as user data
-            List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("playerID", playerID));
-            smartFox.Send(new SetUserVariablesRequest(uData));
-
-        }
-        else
-        {
-            try
-            {
-                playerID = (int)user.GetVariable("playerIDs").GetIntValue();
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("error in else of playerIDs " + ex.ToString());
-            }
-        }
-        return playerID;
-    }
 	
 	public void OnUserEnterRoom(BaseEvent evt) {
 		User user = (User)evt.Params["user"];
@@ -432,6 +384,8 @@ public class Lobby : MonoBehaviour {
                 gameInfo.PutSFSArray("playerIDs", playerIDs);                   //the player IDs
                 gameInfo.PutInt("numTeams", numTeams);                          //the number of teams
 
+
+                //hmmmmm
                 SFSArray teams = new SFSArray();								//ASSIGN WHICH PLAYERS GO ON WHICH TEAMS
                 int[] teamPlayerIndices;										// numTeams = 8, maxPlayers = 16
                 for (int i = 0; i < numTeams; i++)								// i = 0, j = 0, j = 1, index = 0, index = 8
