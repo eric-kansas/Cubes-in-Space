@@ -221,7 +221,7 @@ public class GameLobby : MonoBehaviour
 
     public void OnRoomCreationError(BaseEvent evt)
     {
-        Debug.Log("Error creating room: " + evt.Params["message"]);
+        Debug.Log("Error creating room: " + evt.Params["message"]);               
     }
 
     public void OnJoinRoom(BaseEvent evt)

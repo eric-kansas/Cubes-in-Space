@@ -228,8 +228,11 @@ public class GameManager : MonoBehaviour {
             {
                 if (currentRoom.UserList[i].GetVariable("playerTeam") != null && currentRoom.UserList[i].GetVariable("playerID") != null)
                 {
-                    Debug.Log("Player variable exists, making character..");
-                    MakeCharacter(currentRoom.UserList[i]);
+                    if (currentRoom.UserList[i].GetVariable("playerTeam").GetIntValue() > -1 && currentRoom.UserList[i].GetVariable("playerID").GetIntValue() > -1)
+                    {
+                        Debug.Log("Player variable exists, making character..");
+                        MakeCharacter(currentRoom.UserList[i]);
+                    }
                 }
                 else
                 {
@@ -241,13 +244,12 @@ public class GameManager : MonoBehaviour {
         // Lock the mouse to the center
         Screen.lockCursor = true;
 
-        if (!GameValues.isHost)
-        {
-            //tell server we have build the world
-            List<UserVariable> userVars = new List<UserVariable>();
-            userVars.Add(new SFSUserVariable("builtGame", true));
-            smartFox.Send(new SetUserVariablesRequest(userVars));
-        }
+        Debug.Log("end");
+        //tell server we have build the world
+        List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("builtGame", true));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
+
     }
 	
 	// Update is called once per frame
@@ -258,27 +260,27 @@ public class GameManager : MonoBehaviour {
 		
 		//display the time
 		//client timeStamp - startTime = timePast in milliseconds
-		if(!firstTime)
+        if (!firstTime)
         {
-			
-			double timePast = TimeManager.Instance.ClientTimeStamp - timeStart;
-			double timeLeft = gameLength - timePast;
-			timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
-			//Debug.Log("Updating Time: " + timeLeft);
-			
-			if (GameValues.isHost && timeLeft <= 0)
-			{
-				//leave the game room
-				string postGameScreen = host.Trim() + " - Room";
-				Debug.Log("Joining the post game screen: " + postGameScreen);
-				smartFox.Send(new JoinRoomRequest(postGameScreen, "", currentRoom.Id));
-				//Application.LoadLevel("Game Lobby");
-				tryJoiningRoom = true;
-				Screen.lockCursor = false;
-       		 	Screen.showCursor = true;
+
+            double timePast = TimeManager.Instance.ClientTimeStamp - timeStart;
+            double timeLeft = gameLength - timePast;
+            timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
+            //Debug.Log("Updating Time: " + timeLeft);
+
+            if (GameValues.isHost && timeLeft <= 0)
+            {
+                //leave the game room
+                string postGameScreen = host.Trim() + " - Room";
+                Debug.Log("Joining the post game screen: " + postGameScreen);
+                smartFox.Send(new JoinRoomRequest(postGameScreen, "", currentRoom.Id));
+                //Application.LoadLevel("Game Lobby");
+                tryJoiningRoom = true;
+                Screen.lockCursor = false;
+                Screen.showCursor = true;
                 firstTime = true;
-                
-		    }
+
+            }
             string scoreMessage = "";
             //for (int i = 0; i < teamScores.Count; i++)
             for (int i = 0; i < numberOfTeams; i++)
@@ -314,10 +316,44 @@ public class GameManager : MonoBehaviour {
                 }
             }
             scoresText.text = scoreMessage;
-		
-		
-			//scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";
-		}
+
+
+            //scoreMessage += "Team: " + (i + 1) + " " + teamScores[i].ToString() + "\n";
+        }
+        else
+        {
+            if (GameValues.isHost)
+            {
+                int teampCounter = 0;
+                foreach (User user in currentRoom.UserList)
+                {
+                    if (user.ContainsVariable("builtGame"))
+                    {
+                        teampCounter++;
+                    }
+                    else
+                    {
+                        Debug.Log("user has not built yet: " + user.Name);
+                        break;
+                    }
+                }
+                if (teampCounter == numberOfPlayers)
+                {
+                    Debug.Log("GAME START");
+                    //add the start time to the room variables
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    gameStartTime = TimeManager.Instance.ClientTimeStamp;
+
+                    SFSRoomVariable startTime = new SFSRoomVariable("startTime", (double)gameStartTime);
+                    SFSRoomVariable roomVar = new SFSRoomVariable("gameStarted", true);
+                    roomVars.Add(startTime);
+                    roomVars.Add(roomVar);
+                    timeStart = (float)gameStartTime;
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+                    Debug.Log("after teh request sent");
+                }
+            }
+        }
 		
 		
 		
@@ -400,19 +436,20 @@ public class GameManager : MonoBehaviour {
             whichColor = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerTeam").GetIntValue(); //FIX THIS, THE BUG IS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			Debug.Log("the user is not me and which color = " + whichColor);
             int whichPos = smartFox.LastJoinedRoom.GetUserByName(user.Name).GetVariable("playerID").GetIntValue();
-			Debug.Log("username = " + user.Name + "\tposition index = " + whichPos);
+			Debug.Log("username = " + user.Name + "\tposition index = " + (whichPos % 11));
 			//Debug.Log("the colorArray length = " + colors.Count);
-            cha = Instantiate(avatarPF, positions[whichPos], Quaternion.LookRotation(-positions[whichPos])) as GameObject;
+            cha = Instantiate(avatarPF, positions[whichPos%11], Quaternion.LookRotation(-positions[whichPos%11])) as GameObject;
             otherClients.Add(user.Name, cha); //update the dictionary of the other players
 			cha.GetComponent<Avatar>().color = colors[whichColor];
             cha.GetComponent<Avatar>().team = whichColor;
-            cha.GetComponent<Avatar>().TargetPosition = positions[whichPos];
+            cha.GetComponent<Avatar>().TargetPosition = positions[whichPos % 11];
         }
 
         Character ch = cha.GetComponent<Character>();
         ch.BodyColor = colors[whichColor];
         ch.IsMe = user.IsItMe;
         ch.SmartFoxUser = user;
+        Debug.Log("here in make car");
 		
     }
 
@@ -612,7 +649,6 @@ public class GameManager : MonoBehaviour {
 			{
 				//if game is over
 				//move to game lobby
-                Debug.Log("ehrekhrl");
 				string postGameRoomName = user.Name.Trim() + " - Room";
 				smartFox.Send(new JoinRoomRequest(postGameRoomName, "", currentRoom.Id));
 				tryJoiningRoom = true;
@@ -688,6 +724,7 @@ public class GameManager : MonoBehaviour {
             {
                 playerInitCount++;
                 Debug.Log("player init count: " + playerInitCount);
+                Debug.Log("num players bro: " + numberOfPlayers);
                 if (playerInitCount == numberOfPlayers)
                 {
                     Debug.Log("GAME START");
