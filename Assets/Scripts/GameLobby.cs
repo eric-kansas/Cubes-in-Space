@@ -103,7 +103,6 @@ public class GameLobby : MonoBehaviour
         //Set team scroll positions to zero
         for(int i = 0; i < 8; i++)
         {
-            Debug.Log("here in the loop init: " + i);
             teamScrollPositions.Add(Vector2.zero);
         }
 
@@ -317,8 +316,9 @@ public class GameLobby : MonoBehaviour
                     Debug.Log("Left team has: " + passedPlayerTeam);
                     Debug.Log("Joined team has: " + passedPlayerTeamRequest);
                     SFSObject returnData = new SFSObject();
+					returnData.PutUtfString("name", data.GetUtfString("name"));
                     returnData.PutBool("teamRequest", true);
-                    returnData.PutInt("teamID", passedPlayerTeamRequest);
+                    returnData.PutInt("team", passedPlayerTeamRequest);
                     smartFox.Send(new ObjectMessageRequest(returnData));
                 }
             }
@@ -348,14 +348,6 @@ public class GameLobby : MonoBehaviour
                 }
 
             }
-            else if (data.ContainsKey("teamRequest"))
-            {
-                GameValues.teamNum = data.GetInt("teamID");
-                List<UserVariable> uData = new List<UserVariable>();
-                uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-                smartFox.Send(new SetUserVariablesRequest(uData));
-                Debug.Log("joined another team:" + GameValues.teamNum);
-            }
         }
 
 
@@ -365,10 +357,10 @@ public class GameLobby : MonoBehaviour
 
     public void OnRoomVariablesUpdate(BaseEvent evt)
     {
-        //Debug.Log("ROOM VARS");
+        
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
-
+		//Debug.Log("ROOM VARS: " + changedVars.Contains("gameInfo"));
         if (!GameValues.isHost)
         {
             // Check if the "gameStarted" variable was changed
@@ -381,15 +373,17 @@ public class GameLobby : MonoBehaviour
                     smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
                     Debug.Log(nameParts[0].Trim() + " - Game");
 					tryJoiningRoom = true;
-                }else if (changedVars.Contains("gameInfo"))
-				{
-					numberOfTeams = room.GetVariable("gameInfo").GetSFSObjectValue().GetInt("numTeams");
-				}
+                }
                 else
                 {
                     Debug.Log("Game stopped");
                 }
             }
+			if (changedVars.Contains("gameInfo"))
+			{
+				Debug.Log("here in room vars gameinfo");
+				numberOfTeams = room.GetVariable("gameInfo").GetSFSObjectValue().GetInt("numTeams");
+			}
         }
  
     }
@@ -476,6 +470,7 @@ public class GameLobby : MonoBehaviour
 	                        numberOfTeams = Convert.ToInt32(teamNumberList[teamListEntry].text);
 	                        List<RoomVariable> tData = new List<RoomVariable>();
 	                        lobbyGameInfo.PutInt("numTeams", numberOfTeams);
+							Debug.Log("send num teams change");
 	                        tData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
 	                        smartFox.Send(new SetRoomVariablesRequest(tData));
 	
@@ -590,12 +585,11 @@ public class GameLobby : MonoBehaviour
             List<UserVariable> uData = new List<UserVariable>();
             uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
             smartFox.Send(new SetUserVariablesRequest(uData));
-
-            
             Debug.Log("joined another team:" + GameValues.teamNum);
         }
         else
         {
+			data.PutUtfString("name", username);
             data.PutInt("RequestTeamID", teamIndex);
             data.PutInt("CurrentTeamID", GameValues.teamNum);
             smartFox.Send(new ObjectMessageRequest(data));
