@@ -47,6 +47,19 @@ public class GameLobby : MonoBehaviour
     int gameLength;
     int maxPlayers;
 
+    private bool showGameList = false;
+    private bool showTeamList = false;
+    private int gameListEntry = 0;
+    private int teamListEntry = 0;
+    private GUIContent[] gameLengthList = new GUIContent[4];
+    private GUIContent[] teamNumberList = new GUIContent[7];
+    private GUIStyle listStyle = new GUIStyle();
+    private bool teamPicked = false;
+    private bool gamePicked = false;
+
+    private List<Vector2> teamScrollPositions = new List<Vector2>();
+    private int playerPerTeam;
+
     void Start()
     {
         Debug.Log("start game lobby");
@@ -64,13 +77,49 @@ public class GameLobby : MonoBehaviour
         maxPlayers = currentActiveRoom.MaxUsers;
         host = lobbyGameInfo.GetUtfString("host");
         numberOfTeams = lobbyGameInfo.GetInt("numTeams");
-
+        Debug.Log("start number of teams: " + numberOfTeams);
         if (GameValues.isHost)
-            currentTeams = new int[numberOfTeams];
+            currentTeams = new int[8];
 
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
+        playerPerTeam = numberOfPlayers / numberOfTeams;
+        gameLength = (int)lobbyGameInfo.GetInt("gameLength");
 
-        gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
+        //Make Contents for the popup gameLength list
+        gameLengthList[0] = (new GUIContent("30"));
+        gameLengthList[1] = (new GUIContent("60"));
+        gameLengthList[2] = (new GUIContent("90"));
+        gameLengthList[3] = (new GUIContent("120"));
+
+        //Make Contents for the popup number of teams list
+        teamNumberList[0] = (new GUIContent("2"));
+        teamNumberList[1] = (new GUIContent("3"));
+        teamNumberList[2] = (new GUIContent("4"));
+        teamNumberList[3] = (new GUIContent("5"));
+        teamNumberList[4] = (new GUIContent("6"));
+        teamNumberList[5] = (new GUIContent("7"));
+        teamNumberList[6] = (new GUIContent("8"));
+
+        //Set team scroll positions to zero
+        for(int i = 0; i < 8; i++)
+        {
+            Debug.Log("here in the loop init: " + i);
+            teamScrollPositions.Add(Vector2.zero);
+        }
+
+        //Make a gui style for the lists
+        listStyle.normal.textColor = Color.white;
+        Texture2D tex = new Texture2D(2, 2);
+        Color[] colors = new Color[4];
+        for (int i = 0; i < 4; i++)
+        {
+            colors[i] = Color.white;
+        }
+        tex.SetPixels(colors);
+        tex.Apply();
+        listStyle.hover.background = tex;
+        listStyle.onHover.background = tex;
+        listStyle.padding.left = listStyle.padding.right = listStyle.padding.top = listStyle.padding.bottom = 4;
 
         if (GameValues.isHost)
         {
@@ -228,32 +277,69 @@ public class GameLobby : MonoBehaviour
         User sender = (User)evt.Params["sender"];
         ISFSObject data = (SFSObject)evt.Params["message"];
 
-        Debug.Log("here in object message the sender is: " + sender.Name);
-        Debug.Log("here name: " + data.GetUtfString("name"));
-        Debug.Log("here id: " + data.GetInt("id"));
-        Debug.Log("username: " + username);
-        //deal with messages from other players
-        //case 1: A player has launched somewhere
-        if (data.ContainsKey("name"))
+        Debug.Log("here ib ob mess");
+
+        /***new***/
+        if (GameValues.isHost)
         {
-            if (data.GetUtfString("name") == username)
+            
+            if (data.ContainsKey("RequestTeamID"))
             {
+                int passedPlayerTeamRequest = data.GetInt("RequestTeamID");
 
-                //get player id
-                GameValues.playerID = data.GetInt("id");
-                     
-                Debug.Log("Player ID: " + GameValues.playerID);
+                //add if there is room on team; not invalid index
+                if (!(currentTeams[passedPlayerTeamRequest] + 1 > playerPerTeam) || !(passedPlayerTeamRequest < 0) || !(passedPlayerTeamRequest > numberOfTeams - 1))
+                {
+                    int passedPlayerTeam = data.GetInt("CurrentTeamID");
+                    currentTeams[passedPlayerTeamRequest]++;
+                    currentTeams[passedPlayerTeam]--;
 
-                GameValues.teamNum = data.GetInt("team");
-                Debug.Log("Player is joining team #" + GameValues.teamNum);
-
-                //store player id and team as user data
-                List<UserVariable> uData = new List<UserVariable>();
-                uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
-                uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-                smartFox.Send(new SetUserVariablesRequest(uData));
+                    Debug.Log("Left team has: " + passedPlayerTeam);
+                    Debug.Log("Joined team has: " + passedPlayerTeamRequest);
+                    SFSObject returnData = new SFSObject();
+                    returnData.PutBool("teamRequest", true);
+                    returnData.PutInt("teamID", passedPlayerTeamRequest);
+                    smartFox.Send(new ObjectMessageRequest(returnData));
+                }
             }
         }
+        else //client
+        {
+            if (data.ContainsKey("name"))
+            {
+                if (data.GetUtfString("name") == username)
+                {
+                    //store player id and team as user data
+                    List<UserVariable> uData = new List<UserVariable>();
+                    if (data.ContainsKey("id"))
+                    {
+                        //get player id
+                        GameValues.playerID = data.GetInt("id");
+                        Debug.Log("Player ID: " + GameValues.playerID);
+                        uData.Add(new SFSUserVariable("playerID", GameValues.playerID));
+                    }
+  
+
+                    GameValues.teamNum = data.GetInt("team");
+                    Debug.Log("Player is joining team #" + GameValues.teamNum);
+
+                    uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+                    smartFox.Send(new SetUserVariablesRequest(uData));
+                }
+
+            }
+            else if (data.ContainsKey("teamRequest"))
+            {
+                GameValues.teamNum = data.GetInt("teamID");
+                List<UserVariable> uData = new List<UserVariable>();
+                uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+                smartFox.Send(new SetUserVariablesRequest(uData));
+                Debug.Log("joined another team:" + GameValues.teamNum);
+            }
+        }
+
+
+        /***/
     }
 	
 
@@ -342,122 +428,163 @@ public class GameLobby : MonoBehaviour
             if (!currentActiveRoom.IsGame)
             {
                 //Debug.Log("DRAWING!!!");
-                DrawLobbyGUI();
-                DrawRoomsGUI();
+                DrawUsersGUI(new Rect(10, 10, 180, 300));
+                DrawSettingsGUI(new Rect(200, 10, 600, 300));
+                DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
                 //DrawGameLobbyGUI();
             }
         }
     }
 
-    private void DrawLobbyGUI()
+    private void DrawSettingsGUI(Rect screenPos)
     {
-        DrawUsersGUI();
-        DrawChatGUI();
+        GUILayout.BeginArea(screenPos);
+            GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+            //begin elements
+            GUILayout.BeginVertical();
+                //begin setting bar
+                GUILayout.BeginHorizontal();
+                    // Number of teams options
+                    GUILayout.Label("Number of teams: ");
+                    if (Popup.List(new Rect(110, 3, 75, 17), ref showTeamList, ref teamListEntry, new GUIContent("Click here"), teamNumberList, listStyle))
+                    {
+                        numberOfTeams = Convert.ToInt32(teamNumberList[teamListEntry].text);
+                        List<RoomVariable> tData = new List<RoomVariable>();
+                        lobbyGameInfo.PutInt("numTeams", numberOfTeams);
+                        tData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
+                        smartFox.Send(new SetRoomVariablesRequest(tData));
 
-        // Send message
-        newMessage = GUI.TextField(new Rect(10, 480, 370, 20), newMessage, 50);
-        if (GUI.Button(new Rect(390, 478, 90, 24), "Send") || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
-        {
-            smartFox.Send(new PublicMessageRequest(newMessage));
-            newMessage = "";
-        }
-        // Logout button
-        if (GUI.Button(new Rect(screenW - 115, 20, 85, 24), "Leave Game"))
-        {
-            //RemovePlayerID(GameValues.playerID);
-            
-            smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
-   
-        }
+                        playerPerTeam = numberOfPlayers / numberOfTeams;
+                        ReallocateTeams();
+                    }
+
+                    // Length of games options
+                    GUILayout.Label("Length of games: ");
+                    if (Popup.List(new Rect(410, 3, 75, 17), ref showGameList, ref gameListEntry, new GUIContent("Click here"), gameLengthList, listStyle))
+                        gamePicked = true;
+                    if (gamePicked)
+                        gameLength = Convert.ToInt32(gameLengthList[gameListEntry].text);
+                        List<RoomVariable> rData = new List<RoomVariable>();
+                        lobbyGameInfo.PutInt("gameLength", gameLength);
+                        rData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
+                        smartFox.Send(new SetRoomVariablesRequest(rData));
+                GUILayout.EndHorizontal();
+            //end elements
+                GUILayout.BeginVertical();
+                if (numberOfTeams < 4)
+                {
+                    GUILayout.BeginHorizontal();
+                    for (int i = 0; i < numberOfTeams; i++)
+                    {
+                        DrawSingleTeamBox(screenPos, i);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                else
+                {
+                    GUILayout.BeginHorizontal();
+                    for (int i = 0; i < 4; i++)
+                    {
+                        DrawSingleTeamBox(screenPos, i);
+                    }
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    for (int i = 0; i < (numberOfTeams - 4); i++)
+                    {
+                        DrawSingleTeamBox(screenPos, i+4);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                GUILayout.EndVertical();
+            GUILayout.EndVertical();
+        GUILayout.EndArea();
     }
 
-    private void AddPlayerID(string user)
+    private void ReallocateTeams()
     {
-        currentIDs.AddInt(currentIDs.Size());
+        currentTeams = new int[8];
+        /*host stuff*/
+        GameValues.teamNum = 0;
+        currentTeams[0]++;        
+        List<UserVariable> uData = new List<UserVariable>();
+        uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+        smartFox.Send(new SetUserVariablesRequest(uData));
 
-        Debug.Log("player id getting passed as: " + (currentIDs.Size() - 1));
-        SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
-
-        //send back to store on server
-        List<RoomVariable> rData = new List<RoomVariable>();
-        gameInfo.PutSFSArray("playerIDs", currentIDs);
-        rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
-        smartFox.Send(new SetRoomVariablesRequest(rData));
-
-        Debug.Log("player name: " + user);
-        SFSObject data = new SFSObject();
-        data.PutUtfString("name", user);
-        data.PutInt("id", currentIDs.Size() - 1);
-
-        int playerTeamIndex = findLowestNumTeam();
-        Debug.Log("assigning: " + playerTeamIndex);
-        data.PutInt("team", playerTeamIndex);
-        if(GameValues.isHost)
-            currentTeams[playerTeamIndex]++;
-        smartFox.Send(new ObjectMessageRequest(data));
-
-        for (int i = numberOfTeams-1; i >= 0; i--)
+        foreach (User user in currentActiveRoom.UserList)
         {
-            Debug.Log("team " + i + ": " + currentTeams[i]);
-        }
-        
-    }
-
-    private int findLowestNumTeam()
-    {
-        int lowest = 25;
-        int returnIndex = 0;
-        for (int i = numberOfTeams-1; i >= 0; i--)
-        {
-            if (currentTeams[i] < lowest)
+            if (!user.IsItMe)
             {
-                lowest = currentTeams[i];
-                returnIndex= i;
+                SFSObject data = new SFSObject();
+                data.PutUtfString("name", user.Name);
+                int playerTeamIndex = findLowestNumTeam();
+                data.PutInt("team", playerTeamIndex);
+                if (GameValues.isHost)
+                    currentTeams[playerTeamIndex]++;
+                smartFox.Send(new ObjectMessageRequest(data));
             }
         }
-        return returnIndex;
     }
 
-    private void RemovePlayer(int id, int teamId)
+    private void DrawSingleTeamBox(Rect screenPos, int team)
     {
-        SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
-        SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
-
-        //update room variable 
-        SFSArray returnInts = new SFSArray();
-        returnInts.AddInt(GameValues.playerID);
-        Debug.Log("here in stuff: " + returnInts.GetInt(0));
-        for (int i = 0; i < idsLeft.Size(); i++)
-        {
-            returnInts.AddInt(idsLeft.GetInt(i));
-            Debug.Log("here in stuff: " + returnInts.GetInt(i + 1));
-        }
-
-        for (int i = 0; i < currentIDs.Size(); i++)
-        {
-            if (currentIDs.GetInt(i) == id)
-            {
-                currentIDs.RemoveElementAt(i);
-                break;
-            }
-        }
-        
-        currentTeams[teamId]--;
-
-        //send back to store on server
-        List<RoomVariable> rData = new List<RoomVariable>();
-        gameInfo.PutSFSArray("playerIDs", returnInts);
-        rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
-        smartFox.Send(new SetRoomVariablesRequest(rData));
-    }
-
-    private void DrawUsersGUI()
-    {
-        GUI.Box(new Rect(screenW - 200, 80, 180, 170), "Users");
-        GUILayout.BeginArea(new Rect(screenW - 190, 110, 150, 160));
-        userScrollPosition = GUILayout.BeginScrollView(userScrollPosition, GUILayout.Width(150), GUILayout.Height(150));
         GUILayout.BeginVertical();
+        //GUILayout.TextArea("ye dude " + team, GUILayout.MinHeight((screenPos.height / 2) - 40));
+        teamScrollPositions[team] = GUILayout.BeginScrollView(teamScrollPositions[team], GUILayout.MinHeight((screenPos.height / 2) - 40), GUILayout.MaxWidth(screenPos.width/4));
+        GUILayout.BeginVertical();
+        List<User> userList = currentActiveRoom.UserList;
+        GUILayout.Label("Team:  " + team );
+        foreach (User user in userList)
+        {
+            if (user.GetVariable("playerTeam") != null)
+            {
+                if (user.GetVariable("playerTeam").GetIntValue() == team)
+                {
+                    GUILayout.Label("--> " + user.Name);
+                }
+            }
+            
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndScrollView();
+        if (GUILayout.Button("Join", GUILayout.MaxHeight(17)))
+        {
+            RequestTeamChange(team);
+        }
+        GUILayout.EndVertical();
+    }
 
+    private void RequestTeamChange(int teamIndex)
+    {
+        SFSObject data = new SFSObject();
+        if (GameValues.isHost)
+        {
+            currentTeams[teamIndex]++;
+            currentTeams[GameValues.teamNum]--;
+            GameValues.teamNum = teamIndex;
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
+
+            
+            Debug.Log("joined another team:" + GameValues.teamNum);
+        }
+        else
+        {
+            data.PutInt("RequestTeamID", teamIndex);
+            data.PutInt("CurrentTeamID", GameValues.teamNum);
+            smartFox.Send(new ObjectMessageRequest(data));
+        }
+    }
+    //private string ReturnTeam(
+
+    private void DrawUsersGUI(Rect screenPos)
+    {
+        GUILayout.BeginArea(screenPos);
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.BeginVertical();
+        GUILayout.Label("Users");
+        userScrollPosition = GUILayout.BeginScrollView(userScrollPosition, false, true, GUILayout.Width(screenPos.width));
+        GUILayout.BeginVertical();
         List<User> userList = currentActiveRoom.UserList;
         foreach (User user in userList)
         {
@@ -465,24 +592,32 @@ public class GameLobby : MonoBehaviour
         }
         GUILayout.EndVertical();
         GUILayout.EndScrollView();
+        GUILayout.BeginHorizontal();
+        // Logout button
+        if (GUILayout.Button("Leave Game"))
+        {
+            //RemovePlayerID(GameValues.playerID);
+            smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
+        }
+        DrawRoomsGUI();
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
         GUILayout.EndArea();
     }
 
     private void DrawRoomsGUI()
     {
-        GUILayout.BeginArea(new Rect(screenW - 190, 290, 180, 150));
-
         if (GameValues.isHost)
         {
             //start game button event listener
-            if (GUI.Button(new Rect(80, 110, 85, 24), "Start Game"))
+            if (GUILayout.Button("Start Game"))
             {
 
                 // ****** Create the actual game ******* //
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
                 String gameName = nameParts[0].Trim() + " - Game";
-				Debug.Log("Host created game named: " + gameName);
-				
+                Debug.Log("Host created game named: " + gameName);
+
                 RoomSettings settings = new RoomSettings(gameName);
                 settings.MaxUsers = (short)currentActiveRoom.MaxUsers; // how many players allowed: 12
                 settings.Extension = new RoomExtension(GameManager.ExtName, GameManager.ExtClass);
@@ -529,32 +664,119 @@ public class GameLobby : MonoBehaviour
         else
         {
             //start game button event listener
-            if (GUI.Button(new Rect(80, 110, 85, 24), "Waiting..."))
+            if (GUILayout.Button("Waiting..."))
             {
             }
         }
-        GUILayout.EndArea();
     }
 
-    private void DrawChatGUI()
+    private void DrawChatGUI(Rect screenPos)
     {
-        GUI.Box(new Rect(10, 80, 470, 390), "Chat");
+        GUILayout.BeginArea(screenPos);
 
-        GUILayout.BeginArea(new Rect(20, 110, 450, 350));
-        chatScrollPosition = GUILayout.BeginScrollView(chatScrollPosition, GUILayout.Width(450), GUILayout.Height(350));
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.BeginVertical();
+        chatScrollPosition = GUILayout.BeginScrollView(chatScrollPosition, false, true, GUILayout.Width(screenPos.width));
         GUILayout.BeginVertical();
         foreach (string message in messages)
         {
-            //this displays text from messages arraylist in the chat window
             GUILayout.Label(message);
         }
         GUILayout.EndVertical();
         GUILayout.EndScrollView();
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Send", GUILayout.MinWidth(50), GUILayout.MaxWidth(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
+        {
+            smartFox.Send(new PublicMessageRequest(newMessage));
+            newMessage = "";
+        }
+        newMessage = GUILayout.TextField(newMessage, 420);
+
+
+        GUILayout.EndHorizontal();
+        GUILayout.EndVertical();
         GUILayout.EndArea();
     }
 
+    private void AddPlayerID(string user)
+    {
+        currentIDs.AddInt(currentIDs.Size());
 
+        Debug.Log("player id getting passed as: " + (currentIDs.Size() - 1));
+        SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
 
+        //send back to store on server
+        List<RoomVariable> rData = new List<RoomVariable>();
+        gameInfo.PutSFSArray("playerIDs", currentIDs);
+        rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
+        smartFox.Send(new SetRoomVariablesRequest(rData));
+
+        Debug.Log("player name: " + user);
+        SFSObject data = new SFSObject();
+        data.PutUtfString("name", user);
+        data.PutInt("id", currentIDs.Size() - 1);
+
+        int playerTeamIndex = findLowestNumTeam();
+        Debug.Log("assigning: " + playerTeamIndex);
+        data.PutInt("team", playerTeamIndex);
+        if(GameValues.isHost)
+            currentTeams[playerTeamIndex]++;
+        smartFox.Send(new ObjectMessageRequest(data));
+
+        for (int i = numberOfTeams-1; i >= 0; i--)
+        {
+            Debug.Log("team " + i + ": " + currentTeams[i]);
+        }
+        
+    }
+
+    private int findLowestNumTeam()
+    {
+        int lowest = 25;
+        int returnIndex = 0;
+        for (int i = numberOfTeams-1; i >= 0; i--)
+        {
+            if (currentTeams[i] <= lowest)
+            {
+                lowest = currentTeams[i];
+                returnIndex= i;
+            }
+        }
+        return returnIndex;
+    }
+
+    private void RemovePlayer(int id, int teamId)
+    {
+        SFSObject gameInfo = (SFSObject)currentActiveRoom.GetVariable("gameInfo").GetSFSObjectValue();
+        SFSArray idsLeft = (SFSArray)gameInfo.GetSFSArray("playerIDs");
+
+        //update room variable 
+        SFSArray returnInts = new SFSArray();
+        returnInts.AddInt(GameValues.playerID);
+        Debug.Log("here in stuff: " + returnInts.GetInt(0));
+        for (int i = 0; i < idsLeft.Size(); i++)
+        {
+            returnInts.AddInt(idsLeft.GetInt(i));
+            Debug.Log("here in stuff: " + returnInts.GetInt(i + 1));
+        }
+
+        for (int i = 0; i < currentIDs.Size(); i++)
+        {
+            if (currentIDs.GetInt(i) == id)
+            {
+                currentIDs.RemoveElementAt(i);
+                break;
+            }
+        }
+        
+        currentTeams[teamId]--;
+
+        //send back to store on server
+        List<RoomVariable> rData = new List<RoomVariable>();
+        gameInfo.PutSFSArray("playerIDs", returnInts);
+        rData.Add(new SFSRoomVariable("gameInfo", gameInfo));
+        smartFox.Send(new SetRoomVariablesRequest(rData));
+    }
 
     private void SetupRoomList()
     {

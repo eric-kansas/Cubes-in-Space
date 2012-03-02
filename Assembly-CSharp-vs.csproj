@@ -57,6 +57,7 @@
      <Compile Include="Assets\Scripts\Networking\Player\Character.cs" />
      <Compile Include="Assets\Scripts\Networking\Player\Player.cs" />
      <Compile Include="Assets\Scripts\Networking\Player\PlayerGUI.cs" />
+     <Compile Include="Assets\Scripts\Popup.cs" />
      <Compile Include="Assets\Scripts\Side.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
      <Compile Include="Assets\Scripts\SmoothFollowCS.cs" />

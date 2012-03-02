@@ -271,7 +271,7 @@ public class GameManager : MonoBehaviour {
 				tryJoiningRoom = true;
 				Screen.lockCursor = false;
        		 	Screen.showCursor = true;
-				
+                firstTime = true;
 				//pass some room variables that talk about the scores
                 //display the score
                 
@@ -463,6 +463,7 @@ public class GameManager : MonoBehaviour {
 		}
         else
         {
+            smartFox.RemoveAllEventListeners();
             Debug.Log("GameRoom- OnJoinRoom: joined " + room.Name);
             Application.LoadLevel("Game Lobby");
             Debug.Log("loading Game Lobby");
