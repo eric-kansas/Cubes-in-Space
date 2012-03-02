@@ -189,7 +189,7 @@ public class Player : MonoBehaviour {
         isFlying = false;
         mouseLook.enabled = true;
         mouseFollow.enabled = false;
-		mouseFollow.arriving = false;
+
         StopCoroutine("CameraSwitch");
     }
 }

@@ -78,6 +78,14 @@ public class GameManager : MonoBehaviour {
     private int playerInitCount;
     public bool gameStarted = false;
 
+    //scoring variables
+    private int valueFirstTime = 10; //bonus points awarded
+    private int valueSteal = 5; //bonus points really
+    private int valueStealLoss = 10; //should be the same as normal but can be changed if we want
+    private int valueLock = 20;
+    private int valueNormal = 10;
+
+
 
     public static GameManager Instance
     {
@@ -258,9 +266,6 @@ public class GameManager : MonoBehaviour {
 			timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
 			//Debug.Log("Updating Time: " + timeLeft);
 			
-		    Debug.Log("((float) TimeManager.Instance.ClientTimeStamp): " + TimeManager.Instance.ClientTimeStamp);
-			Debug.Log("timeStart: " + timeStart);
-			
 			if (GameValues.isHost && timeLeft <= 0)
 			{
 				//leave the game room
@@ -272,8 +277,6 @@ public class GameManager : MonoBehaviour {
 				Screen.lockCursor = false;
        		 	Screen.showCursor = true;
                 firstTime = true;
-				//pass some room variables that talk about the scores
-                //display the score
                 
 		    }
             string scoreMessage = "";
@@ -342,10 +345,30 @@ public class GameManager : MonoBehaviour {
 	
 	public void UpdateTeamScore (int teamLastOwnedBy, int teamOwnedBy)
 	{
-		if(teamLastOwnedBy != -1)
-			teamScores[teamLastOwnedBy]--;
+        if (teamLastOwnedBy != -1)
+        {	//the enemy team has lost a side
+            teamScores[teamLastOwnedBy] -= valueStealLoss;
+            teamScores[teamOwnedBy] += valueSteal;
+        }
+        else
+        {	//this is a blank cube that we've captured
+            teamScores[teamOwnedBy] += valueFirstTime;
+        }
+
         if (teamOwnedBy != -1)
-		    teamScores[teamOwnedBy]++;
+        { //we've stolen a side
+            //this always get run
+            teamScores[teamOwnedBy] += valueNormal;
+        }
+
+        //ADD THE LOGIC FOR LOCKING A CUBE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //MIGHT NOT BE HERE
+	}
+	
+	public void UpdateCubeLock(int teamIndex)
+	{
+		if(teamIndex >= 0)
+			teamScores[teamIndex] += valueLock;
 	}
 
     void MakeCharacter(User user)
@@ -464,7 +487,77 @@ public class GameManager : MonoBehaviour {
         else
         {
             smartFox.RemoveAllEventListeners();
-            Debug.Log("GameRoom- OnJoinRoom: joined " + room.Name);
+            //Debug.Log("GameRoom- OnJoinRoom: joined " + room.Name);
+
+            if (GameValues.isHost)
+            {
+                //pass an updated room variable to the game lobby that talk about the scores
+                ISFSObject obj = new SFSObject();
+                string winner;
+                obj.PutIntArray("scores", teamScores.ToArray());
+                List<String> teamColors = new List<String>();
+                int i;
+                for (i = 0; i < numberOfTeams; i++)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            teamColors.Add("Red");
+                            break;
+                        case 1:
+                            teamColors.Add("Blue");
+                            break;
+                        case 2:
+                            teamColors.Add("Green");
+                            break;
+                        case 3:
+                            teamColors.Add("Purple");
+                            break;
+                        case 4:
+                            teamColors.Add("Yellow");
+                            break;
+                        case 5:
+                            teamColors.Add("Orange");
+                            break;
+                        case 6:
+                            teamColors.Add("Pink");
+                            break;
+                        case 7:
+                            teamColors.Add("Teal");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                int highestScore = -1;
+                winner = "Tie";
+                for (i = 0; i < numberOfTeams; i++)
+                {
+                    if (teamScores[i] > highestScore)
+                    {
+                        winner = teamColors[i];
+                        highestScore = teamScores[i];
+                    }
+                    else if (teamScores[i] == highestScore)
+                    {
+                        if (winner.Contains("Tie: "))
+                        {
+                            winner += ", " + teamColors[i];
+                        }
+                        else
+                        {
+                            winner = "Tie: " + winner + ", " + teamColors[i];
+                        }
+                    }
+                }
+                obj.PutUtfString("winner", winner);
+                obj.PutUtfStringArray("teamColors", teamColors.ToArray());
+                List<RoomVariable> rm = new List<RoomVariable>();
+                rm.Add(new SFSRoomVariable("lastGameScores", obj));
+                smartFox.Send(new SetRoomVariablesRequest(rm));
+            }
+
             Application.LoadLevel("Game Lobby");
             Debug.Log("loading Game Lobby");
             //smartFox.Send(new SpectatorToPlayerRequest());

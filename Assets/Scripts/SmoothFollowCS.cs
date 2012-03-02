@@ -26,8 +26,9 @@ public class SmoothFollowCS : MonoBehaviour
     public Vector3 targetNormal;
 	
 	public bool arriving = false;
-	public float slerpSpeed = 2.0f;
-	public float lookatDistance = 7.5f;
+	//public bool slerpFinished = false;
+	private float slerpSpeed = 10.0f;
+	private float lookatDistance = 10.0f;
     
 
     // Update is called once per frame
@@ -36,9 +37,8 @@ public class SmoothFollowCS : MonoBehaviour
         // Early out if we don't have a target
         if (!target)
             return;
-
-        float wantedHeight = target.position.y + height;
-        float currentHeight = transform.position.y;
+		float wantedHeight = target.position.y + height;
+    	float currentHeight = transform.position.y;
 
         //calc percent of distance traveled
         Vector3 totalDistance = (targetLocation - startLocation);
@@ -62,6 +62,7 @@ public class SmoothFollowCS : MonoBehaviour
 
         // adjust the height of the camera
         transform.position = new Vector3(transform.position.x, currentHeight, transform.position.z);
+        
 		
 		// check if we're arriving at the target, if not just look at the target
 		if (!arriving)
@@ -71,17 +72,39 @@ public class SmoothFollowCS : MonoBehaviour
 		}
 		else
 		{	
-			// slerp to the player's rotation first so that our rotation is similar when we change scripts
-			transform.rotation = Quaternion.Euler(Vector3.Slerp(transform.rotation.eulerAngles, target.rotation.eulerAngles, Time.deltaTime * slerpSpeed));
-			// if we're still a little bit away then use lookat but stop once we're really close
-			if (percent < 1.0f)
+			// the player has arrived at the position so just set the camera's position to be the player's
+			transform.position = target.position;
+			
+			// the dot product between the camera's rotation and the player's rotation
+			float rDot = Quaternion.Dot(transform.rotation, target.rotation);
+			Debug.Log("rDot = " + rDot);
+			/*
+			// if we are not very close in rotation use the lookat to get us pointing in the same general 
+			if ( rDot < 0.75f)
 			{
+				//Debug.Log("Using LookAt");
 				// we want to lookAt a point in front of the player as we arrive to the player's position
 				// this will have us align our camera with the correct player view
 				// the multiplications at the end are to push the lookatPos farther out as we get closer
-				Vector3 lookatPos = target.position + (target.forward * lookatDistance * (slerpSpeed + percent));
+				Vector3 lookatPos = target.position + (target.forward * lookatDistance);
 				transform.LookAt(lookatPos);
+				//transform.LookAt(lookatPos, transform.up);
 			}
+			*/
+			//Debug.Log("Slerping");
+			// slerp to the player's rotation so that our rotation is similar when we change scripts
+			transform.rotation = Quaternion.Slerp(transform.rotation, target.rotation, Time.deltaTime * slerpSpeed);
+			
+			/*
+			// once we get close enough just set the rotations to be the same
+			// this should eliminate the jump at the end...hopefully
+			if (rDot > 0.95f)
+			{
+				Debug.Log("Set the camera rotation to be the player's rotation");
+				transform.rotation = target.rotation;
+				slerpFinished = true;
+			}
+			*/
 		}
 
     }
@@ -92,5 +115,7 @@ public class SmoothFollowCS : MonoBehaviour
         lastPercentMark = .75f;
         heightDamping = 2.0f;
         positionDamping = 2.0f;
+		arriving = false;
+		//slerpFinished = false;
     }
 }

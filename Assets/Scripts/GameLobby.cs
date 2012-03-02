@@ -142,6 +142,27 @@ public class GameLobby : MonoBehaviour
 
         }
 
+        if (currentActiveRoom.ContainsVariable("lastGameScores"))
+        {
+            Debug.Log("scores from last game are present, adding to the message window...");
+            //write out the last games scores to the chat window
+            //format:
+            //scores: int array
+            //winner: string
+            SFSObject lastGameData = (SFSObject)currentActiveRoom.GetVariable("lastGameScores").GetSFSObjectValue();
+            int[] scoresArray = lastGameData.GetIntArray("scores");
+            string[] teamColors = lastGameData.GetUtfStringArray("teamColors");
+
+            messages.Add("Previous Game's Scores");
+            messages.Add("The Winner is... " + lastGameData.GetUtfString("winner").ToString());
+            for (int i = 0; i < scoresArray.Length; i++)
+            {
+                string teamName = teamColors[i] + " Team";
+                messages.Add(teamName + "\tscored " + scoresArray[i].ToString() + " points.");
+            }
+        }
+
+
 		tryJoiningRoom = false;
     }
 

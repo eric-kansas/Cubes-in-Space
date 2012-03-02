@@ -19,6 +19,7 @@ public class Side : MonoBehaviour {
     private ParticleEmitter emitter;
     private ParticleRenderer pRenderer;
     private GameObject manager;
+	public bool locked = false;
     
 
 	// Use this for initialization
@@ -62,7 +63,8 @@ public class Side : MonoBehaviour {
     public void TakeSide(LaunchPacket info, int team)
     {
         
-        if (timeToBeTaken < 0 || // if there is no time to be taken
+        if (!locked &&
+		    timeToBeTaken < 0 || // if there is no time to be taken
             info.GameTimeETA < timeToBeTaken && timeLastTaken + LOCKINTERVAL < info.GameTimeETA)//if eta is less then the current time to be taken and we can take it becuase its not locked
         {
             timeToBeTaken = info.GameTimeETA;

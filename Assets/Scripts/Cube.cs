@@ -117,5 +117,33 @@ public class Cube : MonoBehaviour {
 		{
 			mesh.renderer.material.color = color;
 		}
+		
+		//check for lock
+		for(int i = 0; i < 6; i++)
+		{
+			if(sides[i].GetComponent<MeshRenderer>().renderer.material.color != color)
+			{
+				return;	
+			}
+		}
+		
+		int curTeamIndex = -1;
+		List<Color> colors = GameManager.Instance.colors;
+		
+		for(int i = 0; i < colors.Count; i++)
+		{
+			if(colors[i].Equals(color))
+			{
+				curTeamIndex = i;
+			}
+		}
+		
+		GameManager.Instance.UpdateCubeLock(curTeamIndex);
+		                                    
+		for(int i = 0; i < 6; i++)
+		{
+			sides[i].GetComponent<Side>().locked = true;
+		}
+		
 	}
 }
