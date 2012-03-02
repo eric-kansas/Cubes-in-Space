@@ -300,7 +300,6 @@ public class GameLobby : MonoBehaviour
 
         Debug.Log("here ib ob mess");
 
-        /***new***/
         if (GameValues.isHost)
         {
             
@@ -382,7 +381,10 @@ public class GameLobby : MonoBehaviour
                     smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
                     Debug.Log(nameParts[0].Trim() + " - Game");
 					tryJoiningRoom = true;
-                }
+                }else if (changedVars.Contains("gameInfo"))
+				{
+					numberOfTeams = room.GetVariable("gameInfo").GetSFSObjectValue().GetInt("numTeams");
+				}
                 else
                 {
                     Debug.Log("Game stopped");
@@ -464,32 +466,35 @@ public class GameLobby : MonoBehaviour
             //begin elements
             GUILayout.BeginVertical();
                 //begin setting bar
-                GUILayout.BeginHorizontal();
-                    // Number of teams options
-                    GUILayout.Label("Number of teams: ");
-                    if (Popup.List(new Rect(110, 3, 75, 17), ref showTeamList, ref teamListEntry, new GUIContent("Click here"), teamNumberList, listStyle))
-                    {
-                        numberOfTeams = Convert.ToInt32(teamNumberList[teamListEntry].text);
-                        List<RoomVariable> tData = new List<RoomVariable>();
-                        lobbyGameInfo.PutInt("numTeams", numberOfTeams);
-                        tData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
-                        smartFox.Send(new SetRoomVariablesRequest(tData));
-
-                        playerPerTeam = numberOfPlayers / numberOfTeams;
-                        ReallocateTeams();
-                    }
-
-                    // Length of games options
-                    GUILayout.Label("Length of games: ");
-                    if (Popup.List(new Rect(410, 3, 75, 17), ref showGameList, ref gameListEntry, new GUIContent("Click here"), gameLengthList, listStyle))
-                        gamePicked = true;
-                    if (gamePicked)
-                        gameLength = Convert.ToInt32(gameLengthList[gameListEntry].text);
-                        List<RoomVariable> rData = new List<RoomVariable>();
-                        lobbyGameInfo.PutInt("gameLength", gameLength);
-                        rData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
-                        smartFox.Send(new SetRoomVariablesRequest(rData));
-                GUILayout.EndHorizontal();
+				if(GameValues.isHost)
+				{
+	                GUILayout.BeginHorizontal();
+	                    // Number of teams options
+	                    GUILayout.Label("Number of teams: ");
+	                    if (Popup.List(new Rect(110, 3, 75, 17), ref showTeamList, ref teamListEntry, new GUIContent("Click here"), teamNumberList, listStyle))
+	                    {
+	                        numberOfTeams = Convert.ToInt32(teamNumberList[teamListEntry].text);
+	                        List<RoomVariable> tData = new List<RoomVariable>();
+	                        lobbyGameInfo.PutInt("numTeams", numberOfTeams);
+	                        tData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
+	                        smartFox.Send(new SetRoomVariablesRequest(tData));
+	
+	                        playerPerTeam = numberOfPlayers / numberOfTeams;
+	                        ReallocateTeams();
+	                    }
+	
+	                    // Length of games options
+	                    GUILayout.Label("Length of games: ");
+	                    if (Popup.List(new Rect(410, 3, 75, 17), ref showGameList, ref gameListEntry, new GUIContent("Click here"), gameLengthList, listStyle))
+	                        gamePicked = true;
+	                    if (gamePicked)
+	                        gameLength = Convert.ToInt32(gameLengthList[gameListEntry].text);
+	                        List<RoomVariable> rData = new List<RoomVariable>();
+	                        lobbyGameInfo.PutInt("gameLength", gameLength);
+	                        rData.Add(new SFSRoomVariable("gameInfo", lobbyGameInfo));
+	                        smartFox.Send(new SetRoomVariablesRequest(rData));
+	                GUILayout.EndHorizontal();
+				}
             //end elements
                 GUILayout.BeginVertical();
                 if (numberOfTeams < 4)
