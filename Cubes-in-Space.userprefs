@@ -1,14 +1,14 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\GameLobby.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Lobby.cs">
     <Files>
-      <File FileName="Assets\Scripts\GameLobby.cs" Line="478" Column="44" />
-      <File FileName="Assets\Scripts\GameManager.cs" Line="168" Column="50" />
-      <File FileName="Assets\Scripts\Side.cs" Line="66" Column="20" />
+      <File FileName="Assets\Scripts\GameLobby.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\GameManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Side.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Lobby.cs" Line="121" Column="84" />
       <File FileName="Assets\Scripts\GameValues.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\Networking\Player\Player.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Cube.cs" Line="133" Column="25" />
+      <File FileName="Assets\Scripts\Cube.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

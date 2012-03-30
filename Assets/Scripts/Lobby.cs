@@ -364,7 +364,7 @@ public class Lobby : MonoBehaviour {
                 }
 
                 // ****** Create new room ******* //
-                int gameLength = 90; //time in seconds
+                int gameLength = 10; //time in seconds
 
                 //let smartfox take care of error if duplicate name
                 RoomSettings settings = new RoomSettings(username + " - Room");

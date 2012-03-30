@@ -77,7 +77,7 @@ public class SmoothFollowCS : MonoBehaviour
 			
 			// the dot product between the camera's rotation and the player's rotation
 			float rDot = Quaternion.Dot(transform.rotation, target.rotation);
-			Debug.Log("rDot = " + rDot);
+			//Debug.Log("rDot = " + rDot);
 			/*
 			// if we are not very close in rotation use the lookat to get us pointing in the same general 
 			if ( rDot < 0.75f)

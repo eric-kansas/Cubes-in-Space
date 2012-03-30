@@ -59,6 +59,7 @@ public class GameLobby : MonoBehaviour
 
     private List<Vector2> teamScrollPositions = new List<Vector2>();
     private int playerPerTeam;
+    private float startGameTime = 0.0f;
 
     void Start()
     {
@@ -260,10 +261,7 @@ public class GameLobby : MonoBehaviour
         Debug.Log("Error joining room: " + evt.Params["message"]);
         if (tryJoiningRoom)
 		{
-			String[] nameParts = this.currentActiveRoom.Name.Split('-');
-        	smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
-			//Debug.Log("Attempting to join room named " + nameParts[0].Trim() + " - Game");
-			//tryJoiningRoom = false;
+            joinGame();
 		}
 		else
 		{
@@ -369,10 +367,7 @@ public class GameLobby : MonoBehaviour
                 if (room.GetVariable("gameStarted").GetBoolValue() == true)
                 {
                     Debug.Log("Game started in room vars");
-                    String[] nameParts = this.currentActiveRoom.Name.Split('-');
-                    smartFox.Send(new JoinRoomRequest(nameParts[0].Trim() + " - Game", "", CurrentActiveRoom.Id));
-                    Debug.Log(nameParts[0].Trim() + " - Game");
-					tryJoiningRoom = true;
+                    joinGame();
                 }
                 else
                 {
@@ -444,13 +439,34 @@ public class GameLobby : MonoBehaviour
             // ****** Show full interface only in the Lobby ******* //
             if (!currentActiveRoom.IsGame)
             {
-                //Debug.Log("DRAWING!!!");
-                DrawUsersGUI(new Rect(10, 10, 180, 300));
-                DrawSettingsGUI(new Rect(200, 10, 600, 300));
-                DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
-                //DrawGameLobbyGUI();
+                //if start was clicked and the time has elapsed
+                if (startGameTime > 0 && Time.time > startGameTime)
+                {
+                    //let other players know to switch rooms
+                    List<RoomVariable> roomVars = new List<RoomVariable>();
+                    roomVars.Add(new SFSRoomVariable("gameStarted", true));
+                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+
+                    joinGame();
+                }
+                else
+                {
+
+                    //Debug.Log("DRAWING!!!");
+                    DrawUsersGUI(new Rect(10, 10, 180, 300));
+                    DrawSettingsGUI(new Rect(200, 10, 600, 300));
+                    DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
+                }
             }
         }
+    }
+
+    private void joinGame()
+    {
+        String[] nameParts = this.currentActiveRoom.Name.Split('-');
+        String gameName = nameParts[0].Trim() + " - Game";
+        smartFox.Send(new JoinRoomRequest(gameName,"", currentActiveRoom.Id));
+        tryJoiningRoom = true;
     }
 
     private void DrawSettingsGUI(Rect screenPos)
@@ -660,7 +676,7 @@ public class GameLobby : MonoBehaviour
                 SFSRoomVariable gameInfo = new SFSRoomVariable("gameInfo", lobbyGameInfo);
                 settings.Variables.Add(gameInfo);
 
-                Debug.Log("numberOfPlayers: " + currentActiveRoom.UserCount);
+                
                 SFSRoomVariable userCountVar = new SFSRoomVariable("numberOfPlayers", currentActiveRoom.UserCount);
                 settings.Variables.Add(userCountVar);
 
@@ -668,17 +684,13 @@ public class GameLobby : MonoBehaviour
                 SFSRoomVariable joinedVar = new SFSRoomVariable("playersJoined", joinedPlayers);
                 settings.Variables.Add(joinedVar);
 
-                if (GameValues.isHost)
-                {
-                    Debug.Log("user join room and is me and host");
-                    //let other players know to switch rooms
-                    List<RoomVariable> roomVars = new List<RoomVariable>();
-                    roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
-                }
 
                 //get the values from the appropriate fields to populate the gameInfo
-                smartFox.Send(new CreateRoomRequest(settings, true, currentActiveRoom));
+                smartFox.Send(new CreateRoomRequest(settings));
+
+                //start timer 
+                startGameTime = Time.time + 5.0f;
+                Debug.Log("Start the countdown");
             }
         }
         else
