@@ -443,6 +443,7 @@ public class GameLobby : MonoBehaviour
                 if (startGameTime > 0 && Time.time > startGameTime)
                 {
                     //let other players know to switch rooms
+                    Debug.Log("sending request");
                     List<RoomVariable> roomVars = new List<RoomVariable>();
                     roomVars.Add(new SFSRoomVariable("gameStarted", true));
                     smartFox.Send(new SetRoomVariablesRequest(roomVars));
@@ -646,7 +647,7 @@ public class GameLobby : MonoBehaviour
         if (GameValues.isHost)
         {
             //start game button event listener
-            if (GUILayout.Button("Start Game"))
+            if (GUILayout.Button("Start Game") && startGameTime <= 0)
             {
 
                 // ****** Create the actual game ******* //

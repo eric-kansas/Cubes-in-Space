@@ -18,18 +18,21 @@ public class Side : MonoBehaviour {
     const double LOCKINTERVAL = 5000;
     private ParticleEmitter emitter;
     private ParticleRenderer pRenderer;
-    private GameObject manager;
+    private GameManager manager;
 	public bool locked = false;
+    public bool _isPlayer;
+
+    public bool _isRefuel = false;
+    private bool willPaint;
     
 
 	// Use this for initialization
 	void Start () {
         emitter = this.GetComponentInChildren<ParticleEmitter>();
         pRenderer = this.GetComponentInChildren<ParticleRenderer>();
-        manager = GameObject.Find("GameManager");
-        GameManager managerScript = manager.GetComponent<GameManager>();
-        colors = managerScript.colors;
-        partMaterials = managerScript.materials;
+        manager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        colors = manager.colors;
+        partMaterials = manager.materials;
 	}
 	
 	// Update is called once per frame
@@ -38,20 +41,53 @@ public class Side : MonoBehaviour {
         //if there is a time to be taken set && the current time is passed the time to take
         if (timeToBeTaken > 0 && TimeManager.Instance.ClientTimeStamp > timeToBeTaken)
         {
-			teamLastOwnedBy = teamOwnedBy;
-            Debug.Log("taken at: " + TimeManager.Instance.ClientTimeStamp);
-            teamOwnedBy = currentTeamClaim;
-            cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy]);
+
+            //already owned
+            if (teamOwnedBy == currentTeamClaim)
+            {
+                emitter.emit = true;
+                if (_isPlayer)
+                {
+                    if (_isRefuel)
+                    {
+                        Debug.Log("REFUEL!!!");
+                        manager.myAvatar.GetComponent<Player>().refuel();
+                    }
+                }
+            }
+            else
+            {
+                if (willPaint)
+                {
+                    teamLastOwnedBy = teamOwnedBy;
+                    teamOwnedBy = currentTeamClaim;
+                    cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy]);
+                    pRenderer.material = partMaterials[teamOwnedBy];
+                    emitter.emit = true;
+                    //UPDATE SCORE *****/
+                    GameManager.Instance.UpdateTeamScore(teamLastOwnedBy, teamOwnedBy);
+                    /*****/
+                }
+                if (_isPlayer)
+                {
+                    if (willPaint)
+                    {
+                        manager.myAvatar.GetComponent<Player>().subtractPaint();
+                    }
+
+                    if (teamLastOwnedBy < 0 && _isRefuel)
+                    {
+                        Debug.Log("REFUEL!!!");
+                        manager.myAvatar.GetComponent<Player>().refuel();
+                    }
+                }
+
+            }
+
             timeLastTaken = timeToBeTaken;
             timeToBeTaken = -1;
-            pRenderer.material = partMaterials[teamOwnedBy];
 			
-			
-			//UPDATE SCORE *****/
-			GameManager.Instance.UpdateTeamScore(teamLastOwnedBy, teamOwnedBy);
-			/*****/
-			
-            emitter.emit = true;
+            
         }
         if (emitter.emit == true && timeLastTaken + LOCKINTERVAL < TimeManager.Instance.ClientTimeStamp)
         {
@@ -60,17 +96,22 @@ public class Side : MonoBehaviour {
         }
 	}
 
-    public void TakeSide(LaunchPacket info, int team)
+    public void TakeSide(LaunchPacket info, int team, bool isPlayer = false)
     {
-        
-        if (!locked &&
-		    timeToBeTaken < 0 || // if there is no time to be taken
-            info.GameTimeETA < timeToBeTaken && timeLastTaken + LOCKINTERVAL < info.GameTimeETA)//if eta is less then the current time to be taken and we can take it becuase its not locked
+        //owned by same team
+
+        if (info.Paint)
         {
-            timeToBeTaken = info.GameTimeETA;
-            Debug.Log("TAke at: " + timeToBeTaken);
-            currentTeamClaim = team;
+            if (timeToBeTaken < 0 || // if there is no time to be taken
+            info.GameTimeETA < timeToBeTaken && timeLastTaken + LOCKINTERVAL < info.GameTimeETA)//if eta is less then the current time to be taken and we can take it becuase its not locked
+            {
+                willPaint = true;
+            }
         }
+
+        timeToBeTaken = info.GameTimeETA;
+        currentTeamClaim = team;
+        _isPlayer = isPlayer;
         
     }
 }

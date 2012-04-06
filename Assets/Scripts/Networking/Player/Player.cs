@@ -18,6 +18,7 @@ public class Player : MonoBehaviour {
     private Vector3 normal;
 	public Color color;
 
+    private GUIText paintGUI;
 	private GUIText distGUI; 	//draws the distance to the target
     private GUITexture crosshairGUI;
     private PlayerGUI myGUI;
@@ -36,6 +37,8 @@ public class Player : MonoBehaviour {
     private MouseLook mouseLook;
     private SmoothFollowCS mouseFollow;
     public bool gameStarted = false;
+    public int paintLeft = 0;
+    public int paintCapacity = 5;
 
 	// Use this for initialization
 	void Start () {
@@ -47,10 +50,14 @@ public class Player : MonoBehaviour {
         mouseFollow.targetLocation = gameObject.transform.position;
 		sender = GetComponent<NetworkLaunchMessageSender>();
 
+
+        paintLeft = paintCapacity;
+
         //GUI initializers
         owners = new List<int>();
         myGUI = this.GetComponent<PlayerGUI>();
         distGUI = (GUIText)GameObject.Find("GUI Text Distance").GetComponent<GUIText>();
+        paintGUI = (GUIText)GameObject.Find("GUI Text Paint").GetComponent<GUIText>();
         crosshairGUI = (GUITexture)GameObject.Find("Crosshair Outer").GetComponent<GUITexture>();
         crosshairGUI.color = color;
 	}
@@ -125,18 +132,30 @@ public class Player : MonoBehaviour {
                 calcETA += TimeManager.Instance.ClientTimeStamp;
                 //Debug.Log("calcETA: " + calcETA);
                 //*********SEND DATA ABOUT CLICK***********//
+
+                bool shouldPaint;
+                if (paintLeft > 0)
+                {
+                    shouldPaint = true;
+                }
+                else
+                {
+                    shouldPaint = false;
+                }
+
+
                 LaunchPacket launchMessage;
                 if (targetObjectSide.name.Contains("Cube"))
                 {
                     int cubeID = targetObjectSide.transform.parent.GetComponent<Cube>().id;
                     int sideID = targetObjectSide.GetComponent<Side>().id;
-                    launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA,cubeID,sideID);
+                    launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA,cubeID,sideID,shouldPaint);
                     GameObject side = GameManager.Instance.GetSide(launchMessage.CubeID, launchMessage.SideID);
-                    side.GetComponent<Side>().TakeSide(launchMessage, GameValues.teamNum);
+                    side.GetComponent<Side>().TakeSide(launchMessage, GameValues.teamNum, true);
                 }
                 else
                 {
-                    launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA, -1, -1);
+                    launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA, -1, -1, shouldPaint);
                 }
             
                 sender.SendLaunchOnRequest(launchMessage);
@@ -181,6 +200,24 @@ public class Player : MonoBehaviour {
 		    }//end isFlying
         }//end if
     } //end update
+
+    public void subtractPaint()
+    {
+    
+        paintLeft--;
+        refreshPaintText();
+    }
+
+    private void refreshPaintText()
+    {
+        paintGUI.text = paintLeft + " / " + paintCapacity;
+    }
+
+    public void refuel()
+    {
+        paintLeft = paintCapacity;
+        refreshPaintText();
+    }
 
     IEnumerator CameraSwitch(float delay)
     {

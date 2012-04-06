@@ -15,7 +15,7 @@ public class NetworkLaunchMessageReceiver : MonoBehaviour {
         Debug.Log("SideID: " + launchMessage.SideID);
 		avatarScript.TargetPosition = launchMessage.LaunchDestination;
         GameObject side = GameManager.Instance.GetSide(launchMessage.CubeID, launchMessage.SideID);
-        side.GetComponent<Side>().TakeSide(launchMessage, avatarScript.team);
+        side.GetComponent<Side>().TakeSide(launchMessage, avatarScript.team, false);
 
         //Debug.Log(this.transform.position)		this.transform.LookAt(launchMessage.LaunchDestination);
 

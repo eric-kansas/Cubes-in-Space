@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour {
     public List<Material> materials;
     private List<Vector3> positions;
 
-    private GameObject myAvatar;
+    public GameObject myAvatar;
 	//private GameObject mainCamera;
     public GameObject avatarPF;
     public GameObject characterPF;
@@ -44,6 +44,7 @@ public class GameManager : MonoBehaviour {
 	//gui stuff
 	public GUIText scoresText; 	//draw out the current score standings
 	public GUIText timeText;	//draw the gameTime
+    public GUIText paintText;	//draw the gameTime
     public int myLatency;
 
     private string clientName;
@@ -167,7 +168,6 @@ public class GameManager : MonoBehaviour {
         //add your player id to the list of joined players
         List<RoomVariable> roomVars = new List<RoomVariable>();
         SFSArray playersJoined = (SFSArray)currentRoom.GetVariable("playersJoined").GetSFSArrayValue();
-        Debug.Log("joined players so far: " + playersJoined.Size());
         playersJoined.AddInt(GameValues.playerID);
         SFSRoomVariable roomVar = new SFSRoomVariable("playersJoined", playersJoined);
         roomVars.Add(roomVar);
@@ -255,14 +255,11 @@ public class GameManager : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-        Debug.Log("update: " + gameStateManager.state);
         switch (gameStateManager.state)
         {
             case GameStateManager.GameState.PlayersJoining:
-                Debug.Log("Game State: Joining");
                 break;
             case GameStateManager.GameState.LoadingCubes:
-                Debug.Log("Game State: Loading Cubes");
                 if (GameValues.isHost)
                 {
                     int teampCounter = 0;
@@ -280,15 +277,11 @@ public class GameManager : MonoBehaviour {
                     }
                     if (teampCounter == numberOfPlayers)
                     {
-                        Debug.Log("START Countdown");
-
                         startCountDownToGame();
                     }
                 }
-                Debug.Log("end of loading update");
                 break;
             case GameStateManager.GameState.StartCountDown:
-                Debug.Log("Countdown");
                 if (countdownTimeStart < TimeManager.Instance.ClientTimeStamp)
                 {
                     StartGame();
@@ -362,21 +355,19 @@ public class GameManager : MonoBehaviour {
                 Screen.lockCursor = true;
             }
         }
-        Debug.Log("end update");
 	}
 
     private void startCountDownToGame()
     {
         gameStateManager.state = GameStateManager.GameState.StartCountDown;
-        Debug.Log("starting countdown");
         List<RoomVariable> roomVars = new List<RoomVariable>();
 
         double startCountdownTime = TimeManager.Instance.ClientTimeStamp + 5000.0f;
-        Debug.Log("starting countdown: " + startCountdownTime);
+        
         SFSRoomVariable countdownTime = new SFSRoomVariable("startCountdownTime", (double)startCountdownTime);
         roomVars.Add(countdownTime);
 
-        countdownTimeStart = (float)startCountdownTime;
+        countdownTimeStart = startCountdownTime;
         if (countdownTimeStart <= 0)
         {
             waitingForServerResponse = true;
@@ -775,7 +766,7 @@ public class GameManager : MonoBehaviour {
         Debug.Log("ROOM VARS have been updated");
         Room room = (Room)evt.Params["room"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
-
+        Debug.Log("var: " + changedVars[0].ToString());
         //Debug.Log("Changed Var contains playersJoined? " + changedVars.Contains("playersJoined"));
         //Debug.Log("Changed Var contains cubes in space? " + changedVars.Contains("cubesInSpace"));
         //Debug.Log("Changed var contains game Started? " + changedVars.Contains("gameStarted"));
@@ -801,6 +792,7 @@ public class GameManager : MonoBehaviour {
 
     private void StartGame()
     {
+        Debug.Log("start taht shit!!!!");
         gameStateManager.state = GameStateManager.GameState.GamePlay;
         gameStarted = true;
         myAvatar.GetComponent<Player>().gameStarted = true;

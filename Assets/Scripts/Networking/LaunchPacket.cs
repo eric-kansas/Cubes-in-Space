@@ -8,6 +8,7 @@ using Sfs2X.Entities.Data;
 public class LaunchPacket
 {
     private string type = "LAUNCH";
+    private bool paint;
     private int cubeID = -1;
     private int sideID = -1;
     private Vector3 launchPosition; // Position as Vector3
@@ -21,7 +22,7 @@ public class LaunchPacket
 
     }
 
-    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double eta, int cubeID, int sideID)
+    public LaunchPacket(Vector3 pos, Vector3 destination, double gameTime, double eta, int cubeID, int sideID, bool paint)
     {
         //side hit
         this.cubeID = cubeID;
@@ -40,6 +41,9 @@ public class LaunchPacket
 
         // local game time of arrival
         this.gameTimeETA = eta;
+
+        //should we paint
+        this.paint = paint;
     }
 
 	// Check if this transform is different from given one with specified accuracy
@@ -73,6 +77,8 @@ public class LaunchPacket
 
         //Local Game Time
         this.gameTimeETA = launchMessage.gameTimeETA;
+
+        this.paint = launchMessage.paint;
 	}
 	
 	// Copy the Unity transform to itself
@@ -123,6 +129,9 @@ public class LaunchPacket
         //Local Game Time
         launchMessage.PutDouble("gameTimeETA", this.gameTimeETA);
 
+        //Local Game Time
+        launchMessage.PutBool("paint", this.paint);
+
         data.PutSFSObject("launchMessage", launchMessage);
 		
 		return data;
@@ -164,6 +173,8 @@ public class LaunchPacket
 
         //get & set senders local game time
         launchMessage.gameTimeETA = launchData.GetDouble("gameTimeETA");
+
+        launchMessage.paint = launchData.GetBool("paint");
 
         return launchMessage;
 	}
@@ -241,6 +252,14 @@ public class LaunchPacket
         get
         {
             return gameTimeETA;
+        }
+    }
+
+    public bool Paint
+    {
+        get
+        {
+            return paint;
         }
     }
 }

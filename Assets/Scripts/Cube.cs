@@ -31,6 +31,7 @@ public class Cube : MonoBehaviour {
                     case 0:
                         side = (GameObject)Instantiate(sidePrefab, transform.position + new Vector3(0f, 0f, 2.61f), Quaternion.identity);
                         side.transform.parent = transform;
+                        side.GetComponent<Side>()._isRefuel = true;
 						//add the side to the list
 						//sides.Add(side);
                         break;
