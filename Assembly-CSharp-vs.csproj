@@ -44,12 +44,18 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\Cube.cs" />
      <Compile Include="Assets\Scripts\GameLobby.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
      <Compile Include="Assets\Scripts\GameStateManager.cs" />
      <Compile Include="Assets\Scripts\GameValues.cs" />
      <Compile Include="Assets\Scripts\Lobby.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\Cube.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\CubeChunk.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\CubeChunkGenerator.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\GrandCubeGenerator.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\MapGenerator.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\Side.cs" />
+     <Compile Include="Assets\Scripts\Map Generation\SmoothFollowCS.cs" />
      <Compile Include="Assets\Scripts\MouseLook.cs" />
      <Compile Include="Assets\Scripts\Networking\LaunchPacket.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkLaunchMessageReceiver.cs" />
@@ -59,9 +65,7 @@
      <Compile Include="Assets\Scripts\Networking\Player\Player.cs" />
      <Compile Include="Assets\Scripts\Networking\Player\PlayerGUI.cs" />
      <Compile Include="Assets\Scripts\Popup.cs" />
-     <Compile Include="Assets\Scripts\Side.cs" />
      <Compile Include="Assets\Scripts\SmartFoxConnection.cs" />
-     <Compile Include="Assets\Scripts\SmoothFollowCS.cs" />
      <Compile Include="Assets\Scripts\SpawnPoint.cs" />
      <Compile Include="Assets\Scripts\TimeManager.cs" />
      <None Include="Assets\Standard Assets\Image Effects (Pro Only)\_Sources\Shaders\_DepthOfField\SeparableWeightedBlur.shader" />
