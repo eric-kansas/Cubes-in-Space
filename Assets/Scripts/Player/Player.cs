@@ -38,7 +38,7 @@ public class Player : MonoBehaviour {
     private SmoothFollowCS mouseFollow;
     public bool gameStarted = false;
     public int paintLeft = 0;
-    public int paintCapacity = 5;
+    public int paintCapacity = 10;
 
 	// Use this for initialization
 	void Start () {
@@ -145,13 +145,23 @@ public class Player : MonoBehaviour {
 
 
                 LaunchPacket launchMessage;
-                if (targetObjectSide.name.Contains("Cube"))
+                //grand cube
+                if (targetObjectSide.name.Contains("CubeSide"))
                 {
                     int cubeID = targetObjectSide.transform.parent.GetComponent<Cube>().id;
                     int sideID = targetObjectSide.GetComponent<Side>().id;
                     launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA,cubeID,sideID,shouldPaint);
                     GameObject side = GameManager.Instance.GetSide(launchMessage.CubeID, launchMessage.SideID);
                     side.GetComponent<Side>().TakeSide(launchMessage, GameValues.teamNum, true);
+                }//cube chunk
+                else if (targetObjectSide.name.Contains("Cube Peice"))
+                {
+                    Debug.Log("here in teh hcunk");
+                    int cubeChunkID = targetObjectSide.transform.parent.GetComponent<CubeChunk>().id;
+                    int chuckSideID = targetObjectSide.GetComponent<ChunkSide>().id;
+                    launchMessage = new LaunchPacket(this.transform.position, targetPosition, TimeManager.Instance.ClientTimeStamp, calcETA, cubeChunkID, chuckSideID, shouldPaint);
+                    GameObject side = GameManager.Instance.GetChunkSide(launchMessage.CubeID, launchMessage.SideID);
+                    side.GetComponent<ChunkSide>().TakeSide(launchMessage, GameValues.teamNum, true);
                 }
                 else
                 {

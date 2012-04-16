@@ -16,6 +16,7 @@ public class Cube : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        Debug.Log("Building Sides _____________________________");
 		sides = new List<GameObject>();
         Quaternion cubeRot = transform.rotation;
 		
@@ -31,7 +32,6 @@ public class Cube : MonoBehaviour {
                     case 0:
                         side = (GameObject)Instantiate(sidePrefab, transform.position + new Vector3(0f, 0f, 2.61f), Quaternion.identity);
                         side.transform.parent = transform;
-                        side.GetComponent<Side>()._isRefuel = true;
 						//add the side to the list
 						//sides.Add(side);
                         break;
@@ -102,8 +102,18 @@ public class Cube : MonoBehaviour {
 		//side not found
 		return -1;
 	}
-	
-	
+
+    public void lockCube(int teamNum)
+    {
+        Debug.Log(sides.Count);
+        for (var i = 0; i < sides.Count; i++)
+        {
+            sides[i].GetComponent<Side>().locked = true;
+            sides[i].GetComponent<Side>().teamOwnedBy = teamNum;
+            setSideColor(sides[i], sides[i].GetComponent<Side>().Color[teamNum]);
+        }
+    }
+
 	/// <summary>
 	/// A FUNCTION TO CHANGE THE COLOR OF A SIDE OF A CUBE 
 	/// </summary>

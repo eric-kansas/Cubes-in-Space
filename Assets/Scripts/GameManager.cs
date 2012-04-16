@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour {
     public int numberOfCubes = 10;
     public GameObject GrandCube;
     private List<GameObject> cubeList;
+    private List<GameObject> chunkList;
 
     private Dictionary<string, GameObject> otherClients;
     public List<Color> colors = new List<Color>() { Color.red};
@@ -88,6 +89,8 @@ public class GameManager : MonoBehaviour {
     private GameStateManager gameStateManager;
     private double countdownTimeStart;
 
+    public MapGenerator mapGen;
+
     public bool gotServerTime = false;
     public bool waitingForServerResponse = false;
 
@@ -109,6 +112,7 @@ public class GameManager : MonoBehaviour {
         gameStateManager = new GameStateManager();
 
         cubeList = new List<GameObject>();
+        chunkList = new List<GameObject>();
         otherClients = new Dictionary<string, GameObject>();
         SetupTheFox();
 
@@ -786,6 +790,7 @@ public class GameManager : MonoBehaviour {
         {
             gameStateManager.state = GameStateManager.GameState.StartCountDown;
             countdownTimeStart = currentRoom.GetVariable("startCountdownTime").GetDoubleValue();
+            mapGen.BuildInitialStations(numberOfTeams);
             Debug.Log("startCountdownTime: " + countdownTimeStart);
         }
     }
@@ -851,24 +856,10 @@ public class GameManager : MonoBehaviour {
 
     private void BuildCubes()
     {
-		//if you are the first one in the room, make a shit-ton of cubes and scatter them everywhere
-        List<Vector3> cubePosList = new List<Vector3>();
-
-        for (int i = 0; i < numberOfCubes; i++)
-        {
-            Vector3 randPos = new Vector3(
-                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f)),
-                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f)),
-                                          -WorldSpace + (UnityEngine.Random.value * (WorldSpace * 2f))
-                                          );
-			
-			//add the newly created cube to the cubeList
-            GameObject holderCube = (GameObject)Instantiate(GrandCube, randPos, Quaternion.identity);
-            holderCube.GetComponent<Cube>().id = i;
-            cubeList.Add(holderCube);
-
-        }
-		//make sure everyone knows where those cubes are
+        mapGen.BuildMap();
+        
+        cubeList = mapGen.GrandList;
+        chunkList = mapGen.ChunkList;
     }
 
     private void BuildCubeLists()
@@ -912,5 +903,10 @@ public class GameManager : MonoBehaviour {
         Debug.Log("IDS:  " + cubeID + ", " + sideID);
         Debug.Log("Cubelist:  " + cubeList.Count);
         return cubeList[cubeID].GetComponent<Cube>().Sides[sideID];
+    }
+
+    public GameObject GetChunkSide(int chunkID, int chunkSideID)
+    {
+        return chunkList[chunkID].GetComponent<CubeChunk>().CubeArray[chunkSideID];
     }
 }

@@ -32,7 +32,7 @@ public class CubeChunkGenerator : MonoBehaviour {
 	
 	}
 
-    public GameObject GenerateFullChunk(Vector3 startPos)
+    public GameObject GenerateFullChunk(Vector3 startPos, int myId)
     {
         pieceList = new List<GameObject>();
         centersList = new List<GameObject>();
@@ -80,7 +80,7 @@ public class CubeChunkGenerator : MonoBehaviour {
         DeleteCenterCubes();
 
         Debug.Log("Final cube chunk size is " + pieceList.Count);
-        ChunkScript.BindCubeArray(pieceList);
+        ChunkScript.BindCubeArray(pieceList, myId);
         return Chunk;
     }
 
