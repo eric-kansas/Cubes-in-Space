@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour {
 
     private SmartFox smartFox;
     private Lobby lobby;
-    private Room currentRoom;
+    public Room currentRoom;
     private bool running = false;
 
     public GameObject GrandCube;
@@ -38,7 +38,8 @@ public class GameManager : MonoBehaviour {
 
     List<Vector3> cubePosList = new List<Vector3>();
     List<Vector3> cubeRotList = new List<Vector3>();
-	List<int> teamScores = new List<int>();
+	public List<int> teamScores = new List<int>();
+	public List<CISTeam> teamList = new List<CISTeam>();
 	
 	//gui stuff
 	public GUIText scoresText; 	//draw out the current score standings
@@ -65,8 +66,8 @@ public class GameManager : MonoBehaviour {
                 //      -(SFSArray) teams                           key: "teams"
                 //      -(int)      length of the game in seconds   key: "gameLength"
     string host;
-    int numberOfPlayers;
-    int numberOfTeams;
+    public int numberOfPlayers;
+    public int numberOfTeams;
     int activeTeams;
     SFSArray teams;
     int gameLength;
@@ -124,9 +125,7 @@ public class GameManager : MonoBehaviour {
             BuildCubeLists();
             SendCubesDataToServer(cubePosList, cubeRotList);
         }
-
-        
-
+		
         //SetupGameWorld();
 	
     }
@@ -162,7 +161,14 @@ public class GameManager : MonoBehaviour {
         numberOfPlayers = currentRoom.GetVariable("numberOfPlayers").GetIntValue();
         teams = (SFSArray)lobbyGameInfo.GetSFSArray("teams");
         gameLength = (int)lobbyGameInfo.GetInt("gameLength") * 1000;
-
+		
+		for(int i = 0; i < numberOfTeams; i++)
+		{
+			List<CISPlayer> tempList = new List<CISPlayer>();
+			CISTeam tempTeam = new CISTeam("gray", tempList, 0);
+			teamList.Add(tempTeam);
+		}
+		
         SetupListeners();
 
     }
@@ -182,7 +188,29 @@ public class GameManager : MonoBehaviour {
         userVars.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
         userVars.Add(new SFSUserVariable("playerJoined", true));
         smartFox.Send(new SetUserVariablesRequest(userVars));
+		
     }
+	
+	public void UpdateCapturedScore()
+	{
+		List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("captureScore", GameValues.numCaptured++));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
+	}
+	
+	public void UpdateStolenScore()
+	{
+		List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("stolenScore", GameValues.numStolen++));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
+	}
+	
+	public void UpdateLockedScore()
+	{
+		List<UserVariable> userVars = new List<UserVariable>();
+        userVars.Add(new SFSUserVariable("lockedScore", GameValues.numLocked++));
+        smartFox.Send(new SetUserVariablesRequest(userVars));
+	}
 
 
     private void SetupGameWorld()
@@ -421,7 +449,10 @@ public class GameManager : MonoBehaviour {
 	public void UpdateCubeLock(int teamIndex)
 	{
 		if(teamIndex >= 0)
+		{
+			UpdateLockedScore();
 			teamScores[teamIndex] += valueLock;
+		}
 	}
 
     void MakeCharacter(User user)
@@ -764,6 +795,27 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
+		
+		if (changedVars.Contains("playerTeam"))
+		{
+			CISPlayer tempPlayer = new CISPlayer(user.Name, 0, 0, 0, 0);	// create new player with users name and 0 scores
+			teamList[user.GetVariable("playerTeam").GetIntValue()].AddPlayerToTeam(tempPlayer);
+		}
+		
+		if (changedVars.Contains("captureScore"))
+		{
+			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("captureScore").GetIntValue();
+		}
+		
+		if (changedVars.Contains("stolenScore"))
+		{
+			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("stolenScore").GetIntValue();
+		}
+		
+		if (changedVars.Contains("lockedScore"))
+		{
+			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("lockedScore").GetIntValue();
+		}
     }
     public void OnRoomVariablesUpdate(BaseEvent evt)
     {

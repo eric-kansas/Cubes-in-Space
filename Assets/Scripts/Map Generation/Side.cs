@@ -78,6 +78,10 @@ public class Side : MonoBehaviour {
                     if (willPaint && !locked)
                     {
                         manager.myAvatar.GetComponent<Player>().subtractPaint();
+						if(teamLastOwnedBy == -1)
+							GameManager.Instance.UpdateCapturedScore();
+						else
+							GameManager.Instance.UpdateStolenScore();
                     }
                 }
 
