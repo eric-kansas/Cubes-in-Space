@@ -31,7 +31,7 @@ public class Side : MonoBehaviour {
     
 
 	// Use this for initialization
-	void Start () {
+	void Awake () {
         emitter = this.GetComponentInChildren<ParticleEmitter>();
         pRenderer = this.GetComponentInChildren<ParticleRenderer>();
         manager = GameObject.Find("GameManager").GetComponent<GameManager>();

@@ -24,12 +24,14 @@ public class MapGenerator : MonoBehaviour {
     {
         int idCount = 0;
 
+        /*
         for (int iC = 0; iC < NumberOfCubeChunks; iC++)
         {
             Vector3 randPos = Random.insideUnitSphere * WorldSpace;
             ChunkList.Add(ChunkGen.GenerateFullChunk(randPos, idCount));
             idCount++;
         }
+         */ 
         idCount = 0;
         for (int iG = 0; iG < NumberOfGrandCubes; iG++)
         {

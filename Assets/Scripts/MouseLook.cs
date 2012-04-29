@@ -22,11 +22,13 @@ public class MouseLook : MonoBehaviour {
 	private float sensitivityX = 100F;
 	private float sensitivityY = 100F;
 
-	public float minimumX = -Mathf.PI/4;	
-	public float maximumX = Mathf.PI/4;
+    //30 ( pi/5 ), 45 ( pi/4 ), 60 ( pi/3)
+    private float clamp = 30;
+	public float minimumX = 0;	
+	public float maximumX = 00;
 
-	public float minimumY = -Mathf.PI/4;
-	public float maximumY = Mathf.PI/4;
+	public float minimumY = 0;
+	public float maximumY = 0;
 	
 	public Player player;
 
@@ -68,7 +70,7 @@ public class MouseLook : MonoBehaviour {
 				cummulativeRotationY = Mathf.Clamp(cummulativeRotationY, minimumY, maximumY);
 				
 				// create a Quaternion to hold our current cummulative rotation about the x and y axes
-				Quaternion currentRotation = Quaternion.Euler(-cummulativeRotationX, cummulativeRotationY, 0.0f);
+                Quaternion currentRotation = Quaternion.Euler(-cummulativeRotationX, cummulativeRotationY, lookingDir.z);
 				
 				// Use the Quaternion to update the transform of our camera based on initial rotation
 				// and the current rotation
@@ -96,6 +98,12 @@ public class MouseLook : MonoBehaviour {
 		// Make the rigid body not change rotation
 		if (rigidbody)
 			rigidbody.freezeRotation = true;
+
+        minimumX = -clamp;
+        maximumX = clamp;
+
+        minimumY = -clamp;
+        maximumY = clamp;
 	}
 	public void init(Player playerChar)
 	{

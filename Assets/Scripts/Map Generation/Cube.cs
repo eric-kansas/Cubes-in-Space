@@ -15,7 +15,7 @@ public class Cube : MonoBehaviour {
     }
 
 	// Use this for initialization
-	void Start () {
+	void Awake () {
         Debug.Log("Building Sides _____________________________");
 		sides = new List<GameObject>();
         Quaternion cubeRot = transform.rotation;
@@ -79,6 +79,7 @@ public class Cube : MonoBehaviour {
                                           UnityEngine.Random.value * 45
                                          );
             this.transform.rotation = Quaternion.Euler(randRot);
+            Debug.Log("Building Sides ________________________DONE");
         }
         else
         {
@@ -105,19 +106,19 @@ public class Cube : MonoBehaviour {
 
     public void lockCube(int teamNum)
     {
-        Debug.Log(sides.Count);
+        Debug.Log(teamNum);
         for (var i = 0; i < sides.Count; i++)
         {
             sides[i].GetComponent<Side>().locked = true;
             sides[i].GetComponent<Side>().teamOwnedBy = teamNum;
-            setSideColor(sides[i], sides[i].GetComponent<Side>().Color[teamNum]);
+            setSideColor(sides[i], sides[i].GetComponent<Side>().Color[teamNum], false);
         }
     }
 
 	/// <summary>
 	/// A FUNCTION TO CHANGE THE COLOR OF A SIDE OF A CUBE 
 	/// </summary>
-	public void setSideColor(GameObject sideHit, Color color)
+	public void setSideColor(GameObject sideHit, Color color, bool score = true)
 	{
 		int index = getSideIndex(sideHit);
 		if (index == -1) { return; } //not a proper side
@@ -149,7 +150,8 @@ public class Cube : MonoBehaviour {
 			}
 		}
 		
-		GameManager.Instance.UpdateCubeLock(curTeamIndex);
+        if(score)
+		    GameManager.Instance.UpdateCubeLock(curTeamIndex);
 		                                    
 		for(int i = 0; i < 6; i++)
 		{

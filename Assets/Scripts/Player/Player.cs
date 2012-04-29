@@ -31,14 +31,17 @@ public class Player : MonoBehaviour {
 	
 	
 	//movement variables
-	private float moveSpeed = 60.00f;
+    // speeds 50.00, 60.00 , 70.0f
+	private float moveSpeed = 70.00f;
 	private Vector3 startPos;
 
     private MouseLook mouseLook;
     private SmoothFollowCS mouseFollow;
     public bool gameStarted = false;
     public int paintLeft = 0;
-    public int paintCapacity = 10;
+
+    // 5, 10, 15
+    public int paintCapacity = 15;
 
 	// Use this for initialization
 	void Start () {
@@ -121,7 +124,7 @@ public class Player : MonoBehaviour {
                 Vector3 distanceVector = targetPosition - holderPosition;
                 int counter = 0;
 
-                while(distanceVector.magnitude >= 5)
+                while(distanceVector.magnitude >= 1)
                 {
                     holderPosition += (distanceVector.normalized * moveSpeed * .0001f);
                     distanceVector = targetPosition - holderPosition;
@@ -238,5 +241,10 @@ public class Player : MonoBehaviour {
         mouseFollow.enabled = false;
 
         StopCoroutine("CameraSwitch");
+    }
+
+    public void setMoveSpeed(float _moveSpeed)
+    {
+        moveSpeed = _moveSpeed;
     }
 }

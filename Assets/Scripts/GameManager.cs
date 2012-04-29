@@ -21,8 +21,6 @@ public class GameManager : MonoBehaviour {
     private Room currentRoom;
     private bool running = false;
 
-    public float WorldSpace = 50f;
-    public int numberOfCubes = 10;
     public GameObject GrandCube;
     private List<GameObject> cubeList;
     private List<GameObject> chunkList;
@@ -112,11 +110,13 @@ public class GameManager : MonoBehaviour {
         gameStateManager = new GameStateManager();
 
         cubeList = new List<GameObject>();
-        chunkList = new List<GameObject>();
+        //chunkList = new List<GameObject>();
         otherClients = new Dictionary<string, GameObject>();
         SetupTheFox();
 
         TimeManager.Instance.Init();
+
+        ConfirmJoinedGame();
 
         if (GameValues.isHost)
         {
@@ -125,7 +125,7 @@ public class GameManager : MonoBehaviour {
             SendCubesDataToServer(cubePosList, cubeRotList);
         }
 
-        ConfirmJoinedGame();
+        
 
         //SetupGameWorld();
 	
@@ -178,7 +178,6 @@ public class GameManager : MonoBehaviour {
         smartFox.Send(new SetRoomVariablesRequest(roomVars));
 
         //register your team 
-
         List<UserVariable> userVars = new List<UserVariable>();
         userVars.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
         userVars.Add(new SFSUserVariable("playerJoined", true));
@@ -262,6 +261,8 @@ public class GameManager : MonoBehaviour {
         switch (gameStateManager.state)
         {
             case GameStateManager.GameState.PlayersJoining:
+                //build and pass cubes
+                //count players to make sure all are here
                 break;
             case GameStateManager.GameState.LoadingCubes:
                 if (GameValues.isHost)
@@ -729,7 +730,7 @@ public class GameManager : MonoBehaviour {
         //List<UserVariable> changedVars = (List<UserVariable>)evt.Params["changedVars"];
         ArrayList changedVars = (ArrayList)evt.Params["changedVars"];
         User user = (User)evt.Params["user"];
-        Debug.Log("USERVAR: " + changedVars[0]);
+        Debug.Log("USER: " + user.Name + "USERVAR: " + changedVars[0]);
         if (GameValues.isHost)
         {
             if (changedVars.Contains("playerJoined")){
@@ -737,7 +738,6 @@ public class GameManager : MonoBehaviour {
                 if (playerCount == numberOfPlayers)
                 {
                     Debug.Log("GAME INITING");
-  
                     SetupGameWorld();
 
                     List<RoomVariable> roomVars = new List<RoomVariable>();
@@ -810,8 +810,15 @@ public class GameManager : MonoBehaviour {
             cubeList = new List<GameObject>();
             for (int i = 0; i < cubePosList.Count; i++)
             {
-                GameObject holderCube = (GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.Euler(cubeRotList[i]));
+
+                GameObject holderCube = (GameObject)Instantiate(GrandCube, cubePosList[i], Quaternion.identity);
+                holderCube.transform.rotation = Quaternion.Euler(cubeRotList[i]);
                 holderCube.GetComponent<Cube>().id = i;
+                if (i < numberOfTeams)
+                {
+                    holderCube.GetComponent<Cube>().lockCube(i);
+                }
+                
                 cubeList.Add(holderCube);
             }
             worldLoaded = true;
@@ -856,15 +863,31 @@ public class GameManager : MonoBehaviour {
 
     private void BuildCubes()
     {
-        mapGen.BuildMap();
-        
-        cubeList = mapGen.GrandList;
-        chunkList = mapGen.ChunkList;
+        //mapGen.BuildMap();
+
+        int idCount = 0;
+        for (int iG = 0; iG < 20 + numberOfTeams; iG++)
+        {
+            Debug.Log("GrandList: " + cubeList.Count);
+            Vector3 randPos = UnityEngine.Random.insideUnitSphere * 80;
+            cubeList.Add((GameObject)Instantiate(GrandCube, randPos, Quaternion.identity));
+            cubeList[iG].GetComponent<Cube>().id = idCount;
+            idCount++;
+        }
+
+        for (int iT = 0; iT < numberOfTeams; iT++)
+        {
+            Debug.Log("refuling builoidng");
+            cubeList[iT].GetComponent<Cube>().lockCube(iT);
+        }
+
+        //cubeList = mapGen.GrandList;
+        //chunkList = mapGen.ChunkList;
     }
 
+    //converts grand cubes in to server passible data
     private void BuildCubeLists()
     {
-        Debug.Log("here in building: " + cubeList.Count);
         for (int i = 0; i < cubeList.Count; i++)
         {
             cubePosList.Add(cubeList[i].transform.position);
@@ -874,15 +897,29 @@ public class GameManager : MonoBehaviour {
 
     private void SendCubesDataToServer(List<Vector3> cubePosList, List<Vector3> cubeRotList)
     {
+        //pass cubes by room var
         List<RoomVariable> roomVars = new List<RoomVariable>();
-        SFSArray array = new SFSArray();
+
+        //list of cubes to pass to server
+        SFSArray map = new SFSArray();
         SFSObject sfsObject;
 
+        //convert each cube to a server passible object
         for (int i = 0; i < cubeList.Count; i++)
         {
+
             sfsObject = new SFSObject();
             sfsObject.PutInt("id", i);
-            int[] sides= {-1,-1,-1,-1,-1,-1};
+            int[] sides;
+            if (i < numberOfTeams)
+            {
+               sides = new int[] {i, i, i, i, i, i};
+            }
+            else
+            {
+                sides = new int[] { -1, -1, -1, -1, -1, -1 };
+            }
+            
             sfsObject.PutIntArray("sides", sides);
             sfsObject.PutFloat("x",cubePosList[i].x);
             sfsObject.PutFloat("y", cubePosList[i].y);
@@ -890,11 +927,11 @@ public class GameManager : MonoBehaviour {
             sfsObject.PutFloat("rx", cubeRotList[i].x);
             sfsObject.PutFloat("ry", cubeRotList[i].y);
             sfsObject.PutFloat("rz", cubeRotList[i].z);
-            array.AddSFSObject(sfsObject);
+            map.AddSFSObject(sfsObject);
         }
 
         Debug.Log("sending room");
-        roomVars.Add(new SFSRoomVariable("cubesInSpace", array));
+        roomVars.Add(new SFSRoomVariable("cubesInSpace", map));
         smartFox.Send(new SetRoomVariablesRequest(roomVars));
     }
 
