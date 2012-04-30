@@ -151,7 +151,7 @@ public class Cube : MonoBehaviour {
 		}
 		
         if(score)
-		    GameManager.Instance.UpdateCubeLock(curTeamIndex);
+		    GameManager.Instance.UpdateCubeLock(curTeamIndex, this.transform.position);
 		                                    
 		for(int i = 0; i < 6; i++)
 		{

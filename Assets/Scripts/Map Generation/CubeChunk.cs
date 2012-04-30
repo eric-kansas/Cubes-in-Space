@@ -150,7 +150,7 @@ public class CubeChunk : MonoBehaviour {
             }
         }
 
-        GameManager.Instance.UpdateCubeLock(curTeamIndex);
+        //GameManager.Instance.UpdateCubeLock(curTeamIndex);
 
         for (int i = 0; i < 6; i++)
         {

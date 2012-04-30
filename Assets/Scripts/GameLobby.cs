@@ -23,6 +23,7 @@ public class GameLobby : MonoBehaviour
     private ArrayList messages = new ArrayList();
 
     public GUISkin gSkin;
+	public GUIStyle	gStyleLoading;
 
     //keep track of room we're in
     private Room currentActiveRoom;
@@ -60,6 +61,8 @@ public class GameLobby : MonoBehaviour
     private List<Vector2> teamScrollPositions = new List<Vector2>();
     private int playerPerTeam;
     private float startGameTime = 0.0f;
+	private string[] teamColorNames = {"Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Cyan"}; //MAKE SURE THIS MATCHES WITH THE GAME MANAGER!
+	
 
     void Start()
     {
@@ -87,10 +90,10 @@ public class GameLobby : MonoBehaviour
         gameLength = (int)lobbyGameInfo.GetInt("gameLength");
 
         //Make Contents for the popup gameLength list
-        gameLengthList[0] = (new GUIContent("30"));
-        gameLengthList[1] = (new GUIContent("60"));
-        gameLengthList[2] = (new GUIContent("90"));
-        gameLengthList[3] = (new GUIContent("120"));
+        gameLengthList[0] = (new GUIContent("60"));
+        gameLengthList[1] = (new GUIContent("90"));
+        gameLengthList[2] = (new GUIContent("120"));
+        gameLengthList[3] = (new GUIContent("150"));
 
         //Make Contents for the popup number of teams list
         teamNumberList[0] = (new GUIContent("2"));
@@ -427,12 +430,11 @@ public class GameLobby : MonoBehaviour
         SetupRoomList();
     }
 
-
+	
+	//GUI FUNCTIONS
     void OnGUI()
     {
         if (smartFox == null) return;
-        screenW = Screen.width;
-
 
         if (currentActiveRoom != null)
         {
@@ -440,39 +442,87 @@ public class GameLobby : MonoBehaviour
             if (!currentActiveRoom.IsGame)
             {
                 //if start was clicked and the time has elapsed
-                if (startGameTime > 0 && Time.time > startGameTime)
+                if (startGameTime > 0)
                 {
-                    //let other players know to switch rooms
-                    Debug.Log("sending request");
-                    List<RoomVariable> roomVars = new List<RoomVariable>();
-                    roomVars.Add(new SFSRoomVariable("gameStarted", true));
-                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
-
-                    joinGame();
+					//display a message to all users that the game is starting
+					DrawLoadingScreen();
+					
+					if (Time.time > startGameTime)
+					{
+	                    //let other players know to switch rooms
+	                    Debug.Log("sending request");
+	                    List<RoomVariable> roomVars = new List<RoomVariable>();
+	                    roomVars.Add(new SFSRoomVariable("gameStarted", true));
+	                    smartFox.Send(new SetRoomVariablesRequest(roomVars));
+						
+	                    joinGame();
+					}
                 }
                 else
                 {
-
                     //Debug.Log("DRAWING!!!");
+					screenW = Screen.width;
+					int screenH = Screen.height;
+					int margin = 20;
+					int roomTitleHeight = 100;
+					int usersWidth = (int) (screenW / 5.8); //around 180;
+					int usersHeight = (int) (screenH * .6);
+					int settingsWidth = screenW - (usersWidth + (margin * 3));
+					int settingsHeight = (int) (usersHeight - (screenH * .1));
+					int chatWidth = settingsWidth;
+					int chatHeight = screenH - (roomTitleHeight + (margin * 3) + settingsHeight);
+					int buttonHeight = screenH - (roomTitleHeight + usersHeight + (margin * 4));
+                    /*
                     DrawUsersGUI(new Rect(10, 10, 180, 300));
                     DrawSettingsGUI(new Rect(200, 10, 600, 300));
                     DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
+                    */
+					DrawRoomTitle(new Rect(margin, margin, screenW - (margin * 2), roomTitleHeight));
+					DrawUsersGUI(new Rect(margin, roomTitleHeight + margin, usersWidth, usersHeight));
+                    DrawSettingsGUI(new Rect(usersWidth + (margin * 2), roomTitleHeight + margin, settingsWidth, settingsHeight));
+                    DrawChatGUI(new Rect(usersWidth + (margin * 2), screenH - (chatHeight + margin), chatWidth, chatHeight));
+					DrawButtons(new Rect(margin, roomTitleHeight + usersHeight + (margin * 3), usersWidth, buttonHeight));
                 }
             }
         }
     }
-
-    private void joinGame()
-    {
-        String[] nameParts = this.currentActiveRoom.Name.Split('-');
-        String gameName = nameParts[0].Trim() + " - Game";
-        smartFox.Send(new JoinRoomRequest(gameName,"", currentActiveRoom.Id));
-        tryJoiningRoom = true;
-    }
-
+	
+	private void DrawRoomTitle(Rect screenPos)
+	{
+		GUIStyle aStyle = new GUIStyle();
+		aStyle.fontSize = 75;
+		aStyle.alignment = TextAnchor.MiddleCenter;
+		
+		string roomName = smartFox.LastJoinedRoom.Name.Trim();
+		roomName = roomName.Substring(0, roomName.IndexOf(" "));
+		roomName += "'s Game Lobby";
+		
+		screenPos.x = (screenPos.width / 2) - ((roomName.Length * 5) / 2);
+		
+        GUILayout.BeginArea(screenPos, aStyle);		
+		GUILayout.Label(roomName);
+		GUILayout.EndArea();
+	}				
+	private void DrawLoadingScreen()
+	{
+		gStyleLoading.normal.textColor = Color.green;
+		
+		//Tell our users that the game is loading
+		float rWidth = Screen.width*.2f;
+		float rHeight = 300.0f;
+		float rTop = Screen.height/2;
+		float rLeft = Screen.width/2;
+		GUI.Label(new Rect(rLeft - rWidth/2, rTop - rHeight/2, rWidth, rHeight), "Game Is Starting Soon!", gStyleLoading);
+		
+		//possibly display what is going on behind the scenes
+		//so the user knows something is happening
+		
+	}
     private void DrawSettingsGUI(Rect screenPos)
     {
-        GUILayout.BeginArea(screenPos);
+		GUIStyle aStyle = new GUIStyle();
+		aStyle.padding = new RectOffset(2, 2, 2, 2); 
+        GUILayout.BeginArea(screenPos, aStyle);
             GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
             //begin elements
             GUILayout.BeginVertical();
@@ -482,7 +532,10 @@ public class GameLobby : MonoBehaviour
 	                GUILayout.BeginHorizontal();
 	                    // Number of teams options
 	                    GUILayout.Label("Number of teams: ");
-	                    if (Popup.List(new Rect(110, 3, 75, 17), ref showTeamList, ref teamListEntry, new GUIContent("Click here"), teamNumberList, listStyle))
+						int popListTeamsX = (int) (screenPos.width / 4);
+						if (popListTeamsX < 110) popListTeamsX = 110;
+			
+	                    if (Popup.List(new Rect(popListTeamsX, 5, 75, 17), ref showTeamList, ref teamListEntry, new GUIContent("Click here"), teamNumberList, listStyle))
 	                    {
 	                        numberOfTeams = Convert.ToInt32(teamNumberList[teamListEntry].text);
 	                        List<RoomVariable> tData = new List<RoomVariable>();
@@ -497,7 +550,10 @@ public class GameLobby : MonoBehaviour
 	
 	                    // Length of games options
 	                    GUILayout.Label("Length of games: ");
-	                    if (Popup.List(new Rect(410, 3, 75, 17), ref showGameList, ref gameListEntry, new GUIContent("Click here"), gameLengthList, listStyle))
+						int popListLengthX = (int) (3 * screenPos.width / 4);
+						if (popListLengthX < 410) popListLengthX = 410;
+			
+	                    if (Popup.List(new Rect(popListLengthX, 5, 75, 17), ref showGameList, ref gameListEntry, new GUIContent("Click here"), gameLengthList, listStyle))
 	                        gamePicked = true;
 	                    if (gamePicked)
 	                        gameLength = Convert.ToInt32(gameLengthList[gameListEntry].text);
@@ -537,89 +593,14 @@ public class GameLobby : MonoBehaviour
             GUILayout.EndVertical();
         GUILayout.EndArea();
     }
-
-    private void ReallocateTeams()
-    {
-        currentTeams = new int[8];
-        /*host stuff*/
-        GameValues.teamNum = 0;
-        currentTeams[0]++;        
-        List<UserVariable> uData = new List<UserVariable>();
-        uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-        smartFox.Send(new SetUserVariablesRequest(uData));
-
-        foreach (User user in currentActiveRoom.UserList)
-        {
-            if (!user.IsItMe)
-            {
-                SFSObject data = new SFSObject();
-                data.PutUtfString("name", user.Name);
-                int playerTeamIndex = findLowestNumTeam();
-                data.PutInt("team", playerTeamIndex);
-                if (GameValues.isHost)
-                    currentTeams[playerTeamIndex]++;
-                smartFox.Send(new ObjectMessageRequest(data));
-            }
-        }
-    }
-
-    private void DrawSingleTeamBox(Rect screenPos, int team)
-    {
-        GUILayout.BeginVertical();
-        //GUILayout.TextArea("ye dude " + team, GUILayout.MinHeight((screenPos.height / 2) - 40));
-        teamScrollPositions[team] = GUILayout.BeginScrollView(teamScrollPositions[team], GUILayout.MinHeight((screenPos.height / 2) - 40), GUILayout.MaxWidth(screenPos.width/4));
-        GUILayout.BeginVertical();
-        List<User> userList = currentActiveRoom.UserList;
-        GUILayout.Label("Team:  " + team );
-        foreach (User user in userList)
-        {
-            if (user.GetVariable("playerTeam") != null)
-            {
-                if (user.GetVariable("playerTeam").GetIntValue() == team)
-                {
-                    GUILayout.Label("--> " + user.Name);
-                }
-            }
-            
-        }
-        GUILayout.EndVertical();
-        GUILayout.EndScrollView();
-        if (GUILayout.Button("Join", GUILayout.MaxHeight(17)))
-        {
-            RequestTeamChange(team);
-        }
-        GUILayout.EndVertical();
-    }
-
-    private void RequestTeamChange(int teamIndex)
-    {
-        SFSObject data = new SFSObject();
-        if (GameValues.isHost)
-        {
-            currentTeams[teamIndex]++;
-            currentTeams[GameValues.teamNum]--;
-            GameValues.teamNum = teamIndex;
-            List<UserVariable> uData = new List<UserVariable>();
-            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
-            smartFox.Send(new SetUserVariablesRequest(uData));
-            Debug.Log("joined another team:" + GameValues.teamNum);
-        }
-        else
-        {
-			data.PutUtfString("name", username);
-            data.PutInt("RequestTeamID", teamIndex);
-            data.PutInt("CurrentTeamID", GameValues.teamNum);
-            smartFox.Send(new ObjectMessageRequest(data));
-        }
-    }
-    //private string ReturnTeam(
-
     private void DrawUsersGUI(Rect screenPos)
     {
-        GUILayout.BeginArea(screenPos);
+        GUIStyle aStyle = new GUIStyle();
+		aStyle.padding = new RectOffset(10, 10, 2, 2); 
+        GUILayout.BeginArea(screenPos, aStyle);
         GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
         GUILayout.BeginVertical();
-        GUILayout.Label("Users");
+        GUILayout.Label("Players");
         userScrollPosition = GUILayout.BeginScrollView(userScrollPosition, false, true, GUILayout.Width(screenPos.width));
         GUILayout.BeginVertical();
         List<User> userList = currentActiveRoom.UserList;
@@ -629,19 +610,9 @@ public class GameLobby : MonoBehaviour
         }
         GUILayout.EndVertical();
         GUILayout.EndScrollView();
-        GUILayout.BeginHorizontal();
-        // Logout button
-        if (GUILayout.Button("Leave Game"))
-        {
-            //RemovePlayerID(GameValues.playerID);
-            smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
-        }
-        DrawRoomsGUI();
-        GUILayout.EndHorizontal();
         GUILayout.EndVertical();
         GUILayout.EndArea();
     }
-
     private void DrawRoomsGUI()
     {
         if (GameValues.isHost)
@@ -702,10 +673,11 @@ public class GameLobby : MonoBehaviour
             }
         }
     }
-
     private void DrawChatGUI(Rect screenPos)
     {
-        GUILayout.BeginArea(screenPos);
+		GUIStyle aStyle = new GUIStyle();
+		aStyle.padding = new RectOffset(2, 2, 2, 2); 
+        GUILayout.BeginArea(screenPos, aStyle);
 
         GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
         GUILayout.BeginVertical();
@@ -730,7 +702,128 @@ public class GameLobby : MonoBehaviour
         GUILayout.EndVertical();
         GUILayout.EndArea();
     }
+	private void DrawButtons(Rect screenPos)
+	{
+		GUIStyle aStyle = new GUIStyle();
+		aStyle.padding = new RectOffset(10, 10, 2, 2); 
+        GUILayout.BeginArea(screenPos, aStyle);
+		GUILayout.BeginVertical();
+        if (GameValues.isHost)
+		{
+			//draw the start button
+			DrawRoomsGUI();
+		}
+        if (GUILayout.Button("Leave Game"))
+        {
+            //RemovePlayerID(GameValues.playerID);
+            smartFox.Send(new JoinRoomRequest("The Lobby", "", CurrentActiveRoom.Id));
+        }
+		
+		
+        //DrawRoomsGUI();
+        GUILayout.EndVertical();	
+		GUILayout.EndArea();
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+    private void joinGame()
+    {
+        String[] nameParts = this.currentActiveRoom.Name.Split('-');
+        String gameName = nameParts[0].Trim() + " - Game";
+        smartFox.Send(new JoinRoomRequest(gameName,"", currentActiveRoom.Id));
+        tryJoiningRoom = true;
+        
+    }
+	
+	
+	
+	
+	
+    private void ReallocateTeams()
+    {
+        currentTeams = new int[8];
+        /*host stuff*/
+        GameValues.teamNum = 0;
+        currentTeams[0]++;        
+        List<UserVariable> uData = new List<UserVariable>();
+        uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+        smartFox.Send(new SetUserVariablesRequest(uData));
 
+        foreach (User user in currentActiveRoom.UserList)
+        {
+            if (!user.IsItMe)
+            {
+                SFSObject data = new SFSObject();
+                data.PutUtfString("name", user.Name);
+                int playerTeamIndex = findLowestNumTeam();
+                data.PutInt("team", playerTeamIndex);
+                if (GameValues.isHost)
+                    currentTeams[playerTeamIndex]++;
+                smartFox.Send(new ObjectMessageRequest(data));
+            }
+        }
+    }
+
+    private void DrawSingleTeamBox(Rect screenPos, int team)
+    {
+        GUILayout.BeginVertical();
+        //GUILayout.TextArea("ye dude " + team, GUILayout.MinHeight((screenPos.height / 2) - 40));
+        teamScrollPositions[team] = GUILayout.BeginScrollView(teamScrollPositions[team], GUILayout.MinHeight((screenPos.height / 2) - 40), GUILayout.MaxWidth(screenPos.width/4));
+        GUILayout.BeginVertical();
+        List<User> userList = currentActiveRoom.UserList;
+        GUILayout.Label(teamColorNames[team] + "  Team:");
+        foreach (User user in userList)
+        {
+            if (user.GetVariable("playerTeam") != null)
+            {
+                if (user.GetVariable("playerTeam").GetIntValue() == team)
+                {
+                    GUILayout.Label("--> " + user.Name);
+                }
+            }
+            
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndScrollView();
+        if (GUILayout.Button("Join", GUILayout.MaxHeight(17)))
+        {
+            RequestTeamChange(team);
+        }
+        GUILayout.EndVertical();
+    }
+
+    private void RequestTeamChange(int teamIndex)
+    {
+        SFSObject data = new SFSObject();
+        if (GameValues.isHost)
+        {
+            currentTeams[teamIndex]++;
+            currentTeams[GameValues.teamNum]--;
+            GameValues.teamNum = teamIndex;
+            List<UserVariable> uData = new List<UserVariable>();
+            uData.Add(new SFSUserVariable("playerTeam", GameValues.teamNum));
+            smartFox.Send(new SetUserVariablesRequest(uData));
+            Debug.Log("joined another team:" + GameValues.teamNum);
+        }
+        else
+        {
+			data.PutUtfString("name", username);
+            data.PutInt("RequestTeamID", teamIndex);
+            data.PutInt("CurrentTeamID", GameValues.teamNum);
+            smartFox.Send(new ObjectMessageRequest(data));
+        }
+    }
+    //private string ReturnTeam(
+
+	
+	
     private void AddPlayerID(string user)
     {
         currentIDs.AddInt(currentIDs.Size());
@@ -832,4 +925,11 @@ public class GameLobby : MonoBehaviour
             smartFox.Send(new JoinRoomRequest("The Lobby","",currentActiveRoom.Id));
         }
     }
+
+
+
+
+
+
+
 }

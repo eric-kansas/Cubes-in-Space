@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour {
     private bool running = false;
 
     public GameObject GrandCube;
+    public List<Vector3> myRefillingStations = new List<Vector3>();
     private List<GameObject> cubeList;
     private List<GameObject> chunkList;
 
@@ -44,7 +45,7 @@ public class GameManager : MonoBehaviour {
 	//gui stuff
 	public GUIText scoresText; 	//draw out the current score standings
 	public GUIText timeText;	//draw the gameTime
-    public GUIText paintText;	//draw the gameTime
+    public GUIText paintText;	//draw the player's Paint
     public int myLatency;
 
     private string clientName;
@@ -93,7 +94,7 @@ public class GameManager : MonoBehaviour {
     public bool gotServerTime = false;
     public bool waitingForServerResponse = false;
 
-
+    private GameObject mArrow;
 
     public static GameManager Instance
     {
@@ -125,7 +126,12 @@ public class GameManager : MonoBehaviour {
             BuildCubeLists();
             SendCubesDataToServer(cubePosList, cubeRotList);
         }
-		
+
+        mArrow = GameObject.Find("Arrow");
+        GameValues.numCaptured = 0;
+        GameValues.numLocked = 0;
+        GameValues.numStolen = 0;
+
         //SetupGameWorld();
 	
     }
@@ -193,22 +199,40 @@ public class GameManager : MonoBehaviour {
 	
 	public void UpdateCapturedScore()
 	{
+        Debug.Log("Captured a side");
 		List<UserVariable> userVars = new List<UserVariable>();
-        userVars.Add(new SFSUserVariable("captureScore", GameValues.numCaptured++));
+        GameValues.numCaptured++;
+        SFSArray scores = new SFSArray ();
+        scores.AddInt(GameValues.numCaptured);
+        scores.AddInt(GameValues.numLocked);
+        scores.AddInt(GameValues.numStolen);
+        userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
 	
 	public void UpdateStolenScore()
 	{
+        Debug.Log("Stealing a side");
 		List<UserVariable> userVars = new List<UserVariable>();
-        userVars.Add(new SFSUserVariable("stolenScore", GameValues.numStolen++));
+        GameValues.numStolen++;
+        Debug.Log("Num Stolen: " + GameValues.numStolen);
+        SFSArray scores = new SFSArray();
+        scores.AddInt(GameValues.numCaptured);
+        scores.AddInt(GameValues.numLocked);
+        scores.AddInt(GameValues.numStolen);
+        userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
 	
 	public void UpdateLockedScore()
 	{
 		List<UserVariable> userVars = new List<UserVariable>();
-        userVars.Add(new SFSUserVariable("lockedScore", GameValues.numLocked++));
+        GameValues.numLocked++;
+        SFSArray scores = new SFSArray();
+        scores.AddInt(GameValues.numCaptured);
+        scores.AddInt(GameValues.numLocked);
+        scores.AddInt(GameValues.numStolen);
+        userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
 
@@ -235,12 +259,17 @@ public class GameManager : MonoBehaviour {
             cubeRotList = new List<Vector3>();
             for (int i = 0; i < cubes.Size(); i++)
             {
+                
                 Vector3 pos = new Vector3();
                 pos.x = cubes.GetSFSObject(i).GetFloat("x");
                 pos.y = cubes.GetSFSObject(i).GetFloat("y");
                 pos.z = cubes.GetSFSObject(i).GetFloat("z");
 
                 cubePosList.Add(pos);
+                if (i == GameValues.teamNum)
+                {
+                    myRefillingStations.Add(cubePosList[i]);
+                }
 
                 Vector3 rot = new Vector3();
                 rot.x = cubes.GetSFSObject(i).GetFloat("rx");
@@ -315,17 +344,64 @@ public class GameManager : MonoBehaviour {
                 }
                 break;
             case GameStateManager.GameState.StartCountDown:
+                //display the countdown
+                double timeToStart = TimeManager.Instance.ClientTimeStamp - countdownTimeStart;
+                timeToStart /= -1000;
+
+                if ((int)timeToStart == 0)
+                {
+                    timeText.text = "GO!";
+                }
+                else
+                {
+                    timeText.text = ((int)timeToStart).ToString(); //some effect could be added here to make it pop out a little more
+                }
+
                 if (countdownTimeStart < TimeManager.Instance.ClientTimeStamp)
                 {
                     StartGame();
                 }
-
                 break;
             case GameStateManager.GameState.GamePlay:
                 double timePast = TimeManager.Instance.ClientTimeStamp - countdownTimeStart;
                 double timeLeft = gameLength - timePast;
                 timeText.text = "Time Left: " + ((int)timeLeft / 1000).ToString();
                 //Debug.Log("Updating Time: " + timeLeft);
+
+                if ((timeLeft / 1000) <= 10.0)
+                {
+                    timeText.material.color = Color.red;
+                    //paintText.font.material.color = Color.white;
+                    //effect 1: Flash and shrink
+                    /*double originalFontSize = 120;
+                    double modifyPercent = timeLeft % 1000;
+                    modifyPercent /= 1000;
+                    timeText.fontSize = (int)(originalFontSize * modifyPercent);
+                    timeText.fontStyle = FontStyle.Bold;
+                    if (timeText.fontSize < 60) { timeText.fontSize = 60; }*/
+
+
+
+                    //effect 2: alternate grow and shrink
+                    double originalFontSize = 60;
+                    double finalFontSize = 120;
+                    double modifyPercent = timeLeft % 1000;
+                    modifyPercent /= 1000;
+                    if (modifyPercent > .5)
+                        timeText.fontSize = (int)(originalFontSize / modifyPercent);
+                    else
+                        timeText.fontSize = (int)(finalFontSize * (modifyPercent + .5));
+
+
+                    //effect 3: incremental growing
+                    /*double originalFontSize = 60;
+                    int modifyAmount = (int) (10 - (timeLeft / 1000));
+                    timeText.fontSize = (int) (originalFontSize + (5 * modifyAmount));*/
+
+
+                    timeText.fontStyle = FontStyle.Bold;
+                    //Debug.Log("\t-Time Left is less than 10 seconds");
+                }
 
                 if (GameValues.isHost && timeLeft <= 0)
                 {
@@ -446,12 +522,14 @@ public class GameManager : MonoBehaviour {
         //MIGHT NOT BE HERE
 	}
 	
-	public void UpdateCubeLock(int teamIndex)
+	public void UpdateCubeLock(int teamIndex, Vector3 pos)
 	{
 		if(teamIndex >= 0)
 		{
 			UpdateLockedScore();
 			teamScores[teamIndex] += valueLock;
+            if (teamIndex == GameValues.teamNum)
+                myRefillingStations.Add(pos);
 		}
 	}
 
@@ -605,10 +683,10 @@ public class GameManager : MonoBehaviour {
                             teamColors.Add("Green");
                             break;
                         case 3:
-                            teamColors.Add("Purple");
+                            teamColors.Add("Yellow");
                             break;
                         case 4:
-                            teamColors.Add("Yellow");
+                            teamColors.Add("Purple");
                             break;
                         case 5:
                             teamColors.Add("Orange");
@@ -801,20 +879,13 @@ public class GameManager : MonoBehaviour {
 			CISPlayer tempPlayer = new CISPlayer(user.Name, 0, 0, 0, 0);	// create new player with users name and 0 scores
 			teamList[user.GetVariable("playerTeam").GetIntValue()].AddPlayerToTeam(tempPlayer);
 		}
-		
-		if (changedVars.Contains("captureScore"))
+
+        if (changedVars.Contains("score"))
 		{
-			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("captureScore").GetIntValue();
-		}
-		
-		if (changedVars.Contains("stolenScore"))
-		{
-			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("stolenScore").GetIntValue();
-		}
-		
-		if (changedVars.Contains("lockedScore"))
-		{
-			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("lockedScore").GetIntValue();
+            Debug.Log("Updated Scores: " + user.GetVariable("score").GetSFSArrayValue().GetInt(0) + ", " + user.GetVariable("score").GetSFSArrayValue().GetInt(1) + ", " + user.GetVariable("score").GetSFSArrayValue().GetInt(2));
+			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("score").GetSFSArrayValue().GetInt(0);
+            teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesLocked = user.GetVariable("score").GetSFSArrayValue().GetInt(1);
+            teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesStolen = user.GetVariable("score").GetSFSArrayValue().GetInt(2);
 		}
     }
     public void OnRoomVariablesUpdate(BaseEvent evt)
@@ -931,6 +1002,8 @@ public class GameManager : MonoBehaviour {
         {
             Debug.Log("refuling builoidng");
             cubeList[iT].GetComponent<Cube>().lockCube(iT);
+            if (iT == GameValues.teamNum)
+                myRefillingStations.Add(cubeList[iT].GetComponent<Cube>().transform.position);
         }
 
         //cubeList = mapGen.GrandList;
@@ -997,5 +1070,21 @@ public class GameManager : MonoBehaviour {
     public GameObject GetChunkSide(int chunkID, int chunkSideID)
     {
         return chunkList[chunkID].GetComponent<CubeChunk>().CubeArray[chunkSideID];
+    }
+
+    public void TurnOnArrow()
+    {
+        for (int i = 0; i < mArrow.transform.GetChildCount(); i++)
+        {
+            mArrow.transform.GetChild(i).renderer.enabled = true;
+        }
+    }
+
+    public void TurnOffArrow()
+    {
+        for (int i = 0; i < mArrow.transform.GetChildCount(); i++)
+        {
+            mArrow.transform.GetChild(i).renderer.enabled = false;
+        }
     }
 }

@@ -23,7 +23,7 @@ public class MouseLook : MonoBehaviour {
 	private float sensitivityY = 100F;
 
     //30 ( pi/5 ), 45 ( pi/4 ), 60 ( pi/3)
-    private float clamp = 30;
+    private float clamp = 60;
 	public float minimumX = 0;	
 	public float maximumX = 00;
 

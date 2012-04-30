@@ -35,13 +35,15 @@ public class Player : MonoBehaviour {
 	private float moveSpeed = 70.00f;
 	private Vector3 startPos;
 
-    private MouseLook mouseLook;
+    public MouseLook mouseLook;
     private SmoothFollowCS mouseFollow;
     public bool gameStarted = false;
     public int paintLeft = 0;
 
     // 5, 10, 15
     public int paintCapacity = 15;
+
+    GameManager gManScript;
 
 	// Use this for initialization
 	void Start () {
@@ -53,9 +55,6 @@ public class Player : MonoBehaviour {
         mouseFollow.targetLocation = gameObject.transform.position;
 		sender = GetComponent<NetworkLaunchMessageSender>();
 
-
-        paintLeft = paintCapacity;
-
         //GUI initializers
         owners = new List<int>();
         myGUI = this.GetComponent<PlayerGUI>();
@@ -63,6 +62,10 @@ public class Player : MonoBehaviour {
         paintGUI = (GUIText)GameObject.Find("GUI Text Paint").GetComponent<GUIText>();
         crosshairGUI = (GUITexture)GameObject.Find("Crosshair Outer").GetComponent<GUITexture>();
         crosshairGUI.color = color;
+
+        GameObject gameMan = GameObject.Find("GameManager");
+        gManScript = gameMan.GetComponent<GameManager>();
+        refuel();
 	}
 
     // Update is called once per frame
@@ -216,9 +219,10 @@ public class Player : MonoBehaviour {
 
     public void subtractPaint()
     {
-    
         paintLeft--;
         refreshPaintText();
+        if(paintLeft < 4)
+            gManScript.TurnOnArrow();
     }
 
     private void refreshPaintText()
@@ -230,6 +234,7 @@ public class Player : MonoBehaviour {
     {
         paintLeft = paintCapacity;
         refreshPaintText();
+            gManScript.TurnOffArrow();
     }
 
     IEnumerator CameraSwitch(float delay)
