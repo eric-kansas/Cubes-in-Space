@@ -29,6 +29,7 @@ public class GameManager : MonoBehaviour {
     private Dictionary<string, GameObject> otherClients;
     public List<Color> colors = new List<Color>() { Color.red};
     public List<Material> materials;
+    public List<Material> paintMaterials;
     private List<Vector3> positions;
 
     public GameObject myAvatar;
@@ -46,6 +47,10 @@ public class GameManager : MonoBehaviour {
 	public GUIText scoresText; 	//draw out the current score standings
 	public GUIText timeText;	//draw the gameTime
     public GUIText paintText;	//draw the player's Paint
+	public GUIText refuelText;  //draw the refuel text
+	
+	private bool refuelOn = false;
+	
     public int myLatency;
 
     private string clientName;
@@ -110,7 +115,9 @@ public class GameManager : MonoBehaviour {
 	void Start () {
 
         gameStateManager = new GameStateManager();
-
+		
+		refuelText.material.color = new Color(refuelText.material.color.r, refuelText.material.color.g, refuelText.material.color.b, 0.0f);
+		
         cubeList = new List<GameObject>();
         //chunkList = new List<GameObject>();
         otherClients = new Dictionary<string, GameObject>();
@@ -202,10 +209,12 @@ public class GameManager : MonoBehaviour {
         Debug.Log("Captured a side");
 		List<UserVariable> userVars = new List<UserVariable>();
         GameValues.numCaptured++;
+		GameValues.myScore += (valueNormal + valueFirstTime);
         SFSArray scores = new SFSArray ();
         scores.AddInt(GameValues.numCaptured);
         scores.AddInt(GameValues.numLocked);
         scores.AddInt(GameValues.numStolen);
+		scores.AddInt(GameValues.myScore);
         userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
@@ -215,11 +224,13 @@ public class GameManager : MonoBehaviour {
         Debug.Log("Stealing a side");
 		List<UserVariable> userVars = new List<UserVariable>();
         GameValues.numStolen++;
+		GameValues.myScore += (valueNormal + valueSteal);
         Debug.Log("Num Stolen: " + GameValues.numStolen);
         SFSArray scores = new SFSArray();
         scores.AddInt(GameValues.numCaptured);
         scores.AddInt(GameValues.numLocked);
         scores.AddInt(GameValues.numStolen);
+		scores.AddInt(GameValues.myScore);
         userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
@@ -228,10 +239,12 @@ public class GameManager : MonoBehaviour {
 	{
 		List<UserVariable> userVars = new List<UserVariable>();
         GameValues.numLocked++;
+		GameValues.myScore += (valueNormal + valueLock);
         SFSArray scores = new SFSArray();
         scores.AddInt(GameValues.numCaptured);
         scores.AddInt(GameValues.numLocked);
         scores.AddInt(GameValues.numStolen);
+		scores.AddInt(GameValues.myScore);
         userVars.Add(new SFSUserVariable("score", scores));
         smartFox.Send(new SetUserVariablesRequest(userVars));
 	}
@@ -402,6 +415,14 @@ public class GameManager : MonoBehaviour {
                     timeText.fontStyle = FontStyle.Bold;
                     //Debug.Log("\t-Time Left is less than 10 seconds");
                 }
+			
+				if(refuelOn)
+				{
+					if(refuelText.material.color.a > 0.0f)
+						refuelText.material.color = new Color(refuelText.material.color.r, refuelText.material.color.g, refuelText.material.color.b, refuelText.material.color.a - 0.005f);
+					else
+						refuelOn = false;
+				}
 
                 if (GameValues.isHost && timeLeft <= 0)
                 {
@@ -432,10 +453,10 @@ public class GameManager : MonoBehaviour {
                             scoreMessage += "Green: " + teamScores[i].ToString() + "\n";
                             break;
                         case 3:
-                            scoreMessage += "Purple: " + teamScores[i].ToString() + "\n";
+                            scoreMessage += "Yellow: " + teamScores[i].ToString() + "\n";
                             break;
                         case 4:
-                            scoreMessage += "Yellow: " + teamScores[i].ToString() + "\n";
+                            scoreMessage += "Purple: " + teamScores[i].ToString() + "\n";
                             break;
                         case 5:
                             scoreMessage += "Orange: " + teamScores[i].ToString() + "\n";
@@ -465,7 +486,15 @@ public class GameManager : MonoBehaviour {
             }
         }
 	}
-
+	
+	public void flashRefuel()
+	{
+		refuelText.material.color = Color.red;
+		refuelText.material.color = new Color(refuelText.material.color.r, refuelText.material.color.g, refuelText.material.color.b, 1.0f);
+		
+		refuelOn = true;
+	}
+	
     private void startCountDownToGame()
     {
         gameStateManager.state = GameStateManager.GameState.StartCountDown;
@@ -526,10 +555,12 @@ public class GameManager : MonoBehaviour {
 	{
 		if(teamIndex >= 0)
 		{
-			UpdateLockedScore();
 			teamScores[teamIndex] += valueLock;
             if (teamIndex == GameValues.teamNum)
+			{
+				UpdateLockedScore();
                 myRefillingStations.Add(pos);
+			}
 		}
 	}
 
@@ -886,6 +917,7 @@ public class GameManager : MonoBehaviour {
 			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesCaptured = user.GetVariable("score").GetSFSArrayValue().GetInt(0);
             teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesLocked = user.GetVariable("score").GetSFSArrayValue().GetInt(1);
             teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).sidesStolen = user.GetVariable("score").GetSFSArrayValue().GetInt(2);
+			teamList[user.GetVariable("playerTeam").GetIntValue()].FindPlayer(user.Name).score = user.GetVariable("score").GetSFSArrayValue().GetInt(3);
 		}
     }
     public void OnRoomVariablesUpdate(BaseEvent evt)
@@ -989,7 +1021,7 @@ public class GameManager : MonoBehaviour {
         //mapGen.BuildMap();
 
         int idCount = 0;
-        for (int iG = 0; iG < 20 + numberOfTeams; iG++)
+        for (int iG = 0; iG < 30 + numberOfTeams; iG++)
         {
             Debug.Log("GrandList: " + cubeList.Count);
             Vector3 randPos = UnityEngine.Random.insideUnitSphere * 80;

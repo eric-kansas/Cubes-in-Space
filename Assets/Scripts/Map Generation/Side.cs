@@ -18,7 +18,7 @@ public class Side : MonoBehaviour {
     {
         get { return colors; }
     }
-    private List<Material> partMaterials;
+    public List<Material> partMaterials;
     const double LOCKINTERVAL = 5000;
     private ParticleEmitter emitter;
     private ParticleRenderer pRenderer;
@@ -49,13 +49,15 @@ public class Side : MonoBehaviour {
             //already owned
             if (teamOwnedBy == currentTeamClaim)
             {
-                emitter.emit = true;
+                //pRenderer.material = partMaterials[teamOwnedBy];
+                //emitter.emit = true;
                 if (_isPlayer)
                 {
                     if (locked)
                     {
                         Debug.Log("REFUEL!!!");
                         manager.myAvatar.GetComponent<Player>().refuel();
+						manager.flashRefuel();
                     }
                 }
             }
@@ -65,7 +67,7 @@ public class Side : MonoBehaviour {
                 {
                     teamLastOwnedBy = teamOwnedBy;
                     teamOwnedBy = currentTeamClaim;
-                    cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy]);
+                    cube.GetComponent<Cube>().setSideColor(transform.gameObject, colors[teamOwnedBy], teamLastOwnedBy);
                     Debug.Log("team owned by: " + teamOwnedBy);
                     pRenderer.material = partMaterials[teamOwnedBy];
                     emitter.emit = true;

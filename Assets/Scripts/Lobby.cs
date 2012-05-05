@@ -25,9 +25,11 @@ public class Lobby : MonoBehaviour {
 	
 	private string newMessage = "";
 	private ArrayList messages = new ArrayList();
-		
-	public GUISkin gSkin;
+
     public Texture2D titleImage;
+	public Texture2D titleText;
+	public Texture2D lobbyImage;
+	//public Texture2D[] tutorialImages = new Texture2D[3];
 	
 	//keep track of room we're in
 	private Room currentActiveRoom;
@@ -43,6 +45,21 @@ public class Lobby : MonoBehaviour {
     private int numTeams = 2;
 
     private bool createdMyRoom = false;
+	
+	//Login Menus
+	private bool isTransitioning = false;
+	private int loginState = 1;
+	private int transitionCounter = 0;
+	public GUIStyle buttonStyle;
+	public GUIStyle labelStyle;
+	public GUIStyle labelStyle2;
+	public GUIStyle	textStyle;
+	
+	//lobby styles
+	public GUIStyle titleStyle;
+	public GUIStyle windowStyle;
+	public GUIStyle buttonStyle2;
+	
 	
 	void Start()
 	{
@@ -271,7 +288,8 @@ public class Lobby : MonoBehaviour {
 		screenW = Screen.width;
 
 		// Login
-		if (!isLoggedIn) {
+		if (!isLoggedIn) 
+		{
 			DrawLoginGUI();
 		}
 		else if (currentActiveRoom != null) 
@@ -286,74 +304,368 @@ public class Lobby : MonoBehaviour {
 	}
 	
 	
-	private void DrawLoginGUI(){
-        GUILayout.BeginArea(new Rect((Screen.width / 2) - (titleImage.width / 2), Screen.height / 2 - (titleImage.height), titleImage.width, titleImage.height * 2));
-        GUILayout.BeginVertical();
-
-        //GUI.Box(new Rect(0, 0 , titleImage.width, titleImage.height * 2), "area is here");
+	private void DrawLoginGUI()  {
+		//set up a few variables
+		float leftDrawPoint = (Screen.width / 2) - (titleText.width / 2) + 15;
+		int offset = 30;
+		int buttonWidth = titleText.width - (offset * 2);
+		int buttonHeight = 50;
+		int labelHeight = 30;
+		int labelWidth = 150;
+		int textWidth = titleText.width - labelWidth - (offset * 2);
+		int arrowWidth = 30;
+				
+		
+		//draw the background image
+        GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
         GUILayout.Label(titleImage);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Username: ", GUILayout.MaxWidth(100));
-        username = GUILayout.TextField(username, 25, GUILayout.MaxWidth(200));
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Server: ", GUILayout.MaxWidth(100));
-        serverName = GUILayout.TextField(serverName, 25, GUILayout.MaxWidth(200));
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Port: ", GUILayout.MaxWidth(100));
-        serverPort = int.Parse(GUILayout.TextField(serverPort.ToString(), 4, GUILayout.MaxWidth(200)));
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label(loginErrorMessage);
-
-        if (GUILayout.Button("Login", GUILayout.MaxWidth(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
-        {
-            AddEventListeners();
-            smartFox.Connect(serverName, serverPort);
-        }
-
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-	}
+		GUILayout.EndArea();
+		
+		//draw the title text
+		GUILayout.BeginArea(new Rect(leftDrawPoint, 50, titleText.width, titleText.height));
+		GUILayout.Label(titleText);
+		GUILayout.EndArea();
+		
+		//start an area to draw stuff in
+		GUILayout.BeginArea(new Rect(leftDrawPoint + offset, titleImage.height, titleImage.width, titleImage.height * 2));
+		
+		//figure out what to draw
+		switch (loginState)
+		{
+		case (1): //the startup screen
+			GUILayout.BeginVertical();
+			if (GUILayout.Button("Play Game", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 2;	            
+	        }
+			if (GUILayout.Button("How to Play", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 4;	            
+	        }
+			if (GUILayout.Button("Credits", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 7;	            
+	        }
+			GUILayout.EndVertical();
+			break;
 			
+		case (2): //the play game button has been clicked
+			GUILayout.BeginVertical();
+	        GUILayout.BeginHorizontal();
+	        GUILayout.Label("Username: ", labelStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(labelWidth));
+			GUI.SetNextControlName("userNameField");
+	        username = GUILayout.TextField(username, textStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(textWidth));
+			GUI.FocusControl("userNameField");
+	        GUILayout.EndHorizontal();
+			
+
+			if (GUILayout.Button("Login", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
+	        {
+	            AddEventListeners();
+	            smartFox.Connect(serverName, serverPort);
+	        }
+			
+			if (GUILayout.Button("Server Settings", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 3;
+	        }
+			
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 1;
+	        }			
+			
+	        GUILayout.Label(loginErrorMessage);
+	        GUILayout.EndVertical();
+			break;
+			
+		case (3): //the advanced options buttons has been clicked
+			GUILayout.BeginHorizontal();
+	        GUILayout.Label("Server: ", labelStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(labelWidth));
+	        serverName = GUILayout.TextField(serverName, textStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(textWidth));
+	        GUILayout.EndHorizontal();
+	
+	        GUILayout.BeginHorizontal();
+	        GUILayout.Label("Port: ", labelStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(labelWidth));
+	        serverPort = int.Parse(GUILayout.TextField(serverPort.ToString(), textStyle, GUILayout.MaxHeight(labelHeight), GUILayout.MaxWidth(textWidth)));
+	        GUILayout.EndHorizontal();
+	        
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 2;
+	        }
+			break;
+			
+			
+		case (4): //the how-to-play button has been clicked
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(200));
+			GUILayout.Space(50);
+			//talk about ojectives
+			GUILayout.BeginVertical(GUILayout.MaxHeight(200), GUILayout.MaxWidth(buttonWidth));
+			GUILayout.Label("                Objectives", labelStyle);
+			GUILayout.Label("-capture cubes by painting them", labelStyle2);
+			GUILayout.EndVertical();
+			GUILayout.EndHorizontal();
+			
+			//have some navigation buttons
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(buttonHeight));
+			GUILayout.Space(arrowWidth);
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth - (arrowWidth * 2))))
+	        {
+	            loginState = 1;
+	        }
+			if (GUILayout.Button(">", buttonStyle, GUILayout.MaxWidth(arrowWidth)))
+			{
+				loginState = 5; //	move to the how-to-play: point values menu
+			}
+			GUILayout.EndHorizontal();
+			break;
+			
+		
+			
+		case (5): //the how-to-play: point values menu
+			//talk about ojectives
+			GUILayout.BeginVertical(GUILayout.MaxHeight(200), GUILayout.MaxWidth(buttonWidth));
+			GUILayout.Label("                Points and Scoring:", labelStyle);
+			GUILayout.Label("10  points are normally awarded for painting a cube face", labelStyle2);
+			GUILayout.Label(" 5   additional points are awarded for stealing cube faces", labelStyle2);
+			GUILayout.Label("10   points are lost when a cube face is stolen", labelStyle2);
+			GUILayout.Label("20  bonus points awarded when all sides of get captured", labelStyle2);
+			GUILayout.EndVertical();
+			
+			//have some navigation buttons
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(buttonHeight));
+			if (GUILayout.Button("<", buttonStyle, GUILayout.MaxWidth(arrowWidth)))
+			{
+				loginState = 4; //	move to the how-to-play: objective menu
+			}
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth - (arrowWidth * 2))))
+	        {
+	            loginState = 1;
+	        }
+			if (GUILayout.Button(">", buttonStyle, GUILayout.MaxWidth(arrowWidth)))
+			{
+				loginState = 6; //	move to the how-to-play: painting menu
+			}
+			GUILayout.EndHorizontal();
+			break;
+			
+		case (6): //the how-to-play: painting menu
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(200));
+			GUILayout.Space(50);
+			//talk about painting
+			GUILayout.BeginVertical(GUILayout.MaxHeight(200), GUILayout.MaxWidth(buttonWidth-50));
+			GUILayout.Label("               Painting:", labelStyle);
+			GUILayout.Label("You have a limited amount of paint", labelStyle2);
+			GUILayout.Label("It is shown by the number at the bottom of the screen", labelStyle2);
+			GUILayout.Label("Follow the arrow to a locked cube to refill it", labelStyle2);
+			GUILayout.EndVertical();
+			GUILayout.EndHorizontal();
+			
+			//have some navigation buttons
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(buttonHeight));
+			if (GUILayout.Button("<", buttonStyle, GUILayout.MaxWidth(arrowWidth)))
+			{
+				loginState = 5; //	move to the how-to-play: points menu
+			}
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth - (arrowWidth * 2))))
+	        {
+	            loginState = 1;
+	        }
+			GUILayout.EndHorizontal();
+			break;
+			
+		case (7): //the credits button has been clicked
+			GUILayout.BeginHorizontal(GUILayout.MaxHeight(200));
+			GUILayout.Space(50);
+			//add a section about the creators
+			GUILayout.BeginVertical(GUILayout.MaxWidth(buttonWidth / 2));
+			GUILayout.Label("Developers:", labelStyle);
+			GUILayout.Label("-Jon Hughes", labelStyle2);
+			GUILayout.Label("-Eric 'Kansas' Heaney", labelStyle2);
+			GUILayout.Label("-Jack McDonald", labelStyle2);
+			GUILayout.Label("-Kyler Mulherin", labelStyle2);
+			GUILayout.Label("-Jacob Smith", labelStyle2);
+			GUILayout.EndVertical();
+			
+			//add a section about the images
+			GUILayout.BeginVertical(GUILayout.MaxWidth(buttonWidth / 2));
+			GUILayout.Label("Images and Textures by:", labelStyle);
+			GUILayout.Label("-Jon Hughes", labelStyle2);
+			GUILayout.Label("-supakilla9", labelStyle2);
+			GUILayout.EndVertical();
+			GUILayout.EndHorizontal();
+			
+			
+			if (GUILayout.Button("Back", buttonStyle, GUILayout.MaxWidth(buttonWidth), GUILayout.MaxHeight(buttonHeight)))
+	        {
+	            loginState = 1;
+	        }
+			break;
+			
+		default:
+			loginState = 1;
+			break;
+		}
+		
+		GUILayout.EndArea(); //finish drawing
+		
+	}
+
+	
 	private void DrawLobbyGUI(){
-        DrawUsersGUI(new Rect(10, 10, 180, 300));
-        DrawChatGUI(new Rect(Screen.width - 620, 400, 600, 180));
-        DrawRoomsGUI(new Rect(200, 10, 600, 300));
+		//draw values
+		int titleHeight = 100;
+		int margin = 20;
+		int buttonHeight = 100;
+		int buttonTop = Screen.height - buttonHeight;
+		int userWidth = 200;
+		int userHeight = Screen.height - (titleHeight + buttonHeight + (margin*3));
+		int chatTop = titleHeight + (margin * 2);
+		int chatLeft = userWidth + (margin * 2);
+		int roomWidth = userWidth;
+		int chatWidth = Screen.width - (userWidth + roomWidth + (margin * 4));
+		int roomLeft = chatLeft + chatWidth + margin;
+
+		
+		//draw the background 
+		GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+		GUILayout.Box(lobbyImage);
+		GUILayout.EndArea();
+		
+		//draw the title
+		GUILayout.BeginArea(new Rect(0,margin, Screen.width, titleHeight));
+		GUILayout.Label("The Lobby", titleStyle);
+		GUILayout.EndArea();
+		
+		
+        DrawUsersGUI(new Rect(margin, chatTop, userWidth, userHeight));
+        DrawChatGUI(new Rect(chatLeft, chatTop, chatWidth, userHeight));
+        DrawRoomsGUI(new Rect(roomLeft, chatTop, roomWidth, userHeight));
+		DrawButtonsGUI(new Rect(margin, buttonTop, Screen.width - (margin * 2), buttonHeight), userWidth, roomWidth);
 	}
 
 
     private void DrawUsersGUI(Rect screenPos)
     {
-
         GUILayout.BeginArea(screenPos);
+		
+		GUILayout.Label("Players In The Lobby", labelStyle);
         GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+		
         GUILayout.BeginVertical();
-        GUILayout.Label("Users");
+		
+		//the users window
         userScrollPosition = GUILayout.BeginScrollView(userScrollPosition, false, true, GUILayout.Width(screenPos.width));
         GUILayout.BeginVertical();
         List<User> userList = currentActiveRoom.UserList;
         foreach (User user in userList)
         {
-            GUILayout.Label(user.Name);
+            GUILayout.Label(user.Name, labelStyle2);
         }
         GUILayout.EndVertical();
         GUILayout.EndScrollView();
-        GUILayout.BeginHorizontal();
-        // Logout button
-        if (GUILayout.Button("Logout"))
+		
+		
+		
+        GUILayout.EndVertical();
+		
+        GUILayout.EndArea();
+    }
+
+    private void DrawRoomsGUI(Rect screenPos)
+    {
+        roomSelection = -1;
+
+        GUILayout.BeginArea(screenPos);
+		GUILayout.Label("Join A Game", labelStyle);
+		
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        if (smartFox.RoomList.Count >= 1)
+        {
+            roomScrollPosition = GUILayout.BeginScrollView(roomScrollPosition, GUILayout.Width(screenPos.width));
+            roomSelection = GUILayout.SelectionGrid(roomSelection, roomFullStrings, 1, labelStyle2);
+
+            if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
+            {
+                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection], "", CurrentActiveRoom.Id));
+            }
+            GUILayout.EndScrollView();
+
+        }
+        else
+        {
+            GUILayout.Label("No rooms available to join", labelStyle2);
+        }
+        GUILayout.EndArea();
+      
+    }
+
+    private void DrawChatGUI(Rect screenPos)
+    {
+		int talkWindowHeight = 150;
+		int chatWindowHeight = (int) (screenPos.height - talkWindowHeight);
+
+        GUILayout.BeginArea(screenPos);
+		
+		GUILayout.Label("        Chat with other players", labelStyle);
+		
+		//chat window
+        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
+        GUILayout.BeginVertical();
+        chatScrollPosition = GUILayout.BeginScrollView(chatScrollPosition, false, true, GUILayout.Width(screenPos.width), GUILayout.MaxHeight(chatWindowHeight));
+        GUILayout.BeginVertical();
+        foreach (string message in messages)
+        {
+            GUILayout.Label(message, labelStyle2);
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndScrollView();
+	
+        GUILayout.BeginVertical();
+		//format the input text field
+		GUIStyle aTextStyle = new GUIStyle(textStyle);
+		aTextStyle.wordWrap = true;
+		aTextStyle.alignment = TextAnchor.UpperLeft;
+		aTextStyle.padding.left = 15;
+		aTextStyle.padding.right = 15;
+		aTextStyle.padding.top = 20;
+		aTextStyle.padding.bottom = 10;
+		aTextStyle.fontSize = 30;
+		
+		//make the text field
+		GUI.SetNextControlName("chatField");
+        newMessage = GUILayout.TextField(newMessage, aTextStyle, GUILayout.MaxWidth(screenPos.width), GUILayout.MaxHeight(talkWindowHeight));
+		GUI.FocusControl("chatField");
+		//send button
+        if (GUILayout.Button("Send", buttonStyle, GUILayout.MaxWidth(screenPos.width), GUILayout.MaxHeight(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
+        {
+            smartFox.Send(new PublicMessageRequest(newMessage));
+            newMessage = "";
+        }
+        GUILayout.EndVertical();
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+	
+	private void DrawButtonsGUI(Rect screenPos, int userBoxWidth, int gameBoxWidth)
+	{
+       	GUILayout.BeginArea(screenPos);
+		GUILayout.BeginHorizontal();
+		// Logout button
+     	if (GUILayout.Button("Logout", buttonStyle, GUILayout.MaxWidth(userBoxWidth + 50)))
         {
             smartFox.Send(new LogoutRequest());
         }
+		
+		GUILayout.Space(screenPos.width - (userBoxWidth + gameBoxWidth + 125));
+		
         // Game Room button
-        if (currentActiveRoom.Name == "The Lobby")
+		if (GUILayout.Button("Make Game", buttonStyle, GUILayout.MaxWidth(gameBoxWidth + 125)))
         {
-            if (GUILayout.Button("Make Game"))
-            {
+	        if (currentActiveRoom.Name == "The Lobby")
+	        {
+            
 				Debug.Log("Make Game Button clicked");
 
 
@@ -364,7 +676,7 @@ public class Lobby : MonoBehaviour {
                 }
 
                 // ****** Create new room ******* //
-                int gameLength = 60; //time in seconds
+                int gameLength = 120; //time in seconds
 
                 //let smartfox take care of error if duplicate name
                 RoomSettings settings = new RoomSettings(username + " - Room");
@@ -411,67 +723,10 @@ public class Lobby : MonoBehaviour {
                 Debug.Log("new room " + username + " - Room ");
             }
         }
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
-
-    private void DrawRoomsGUI(Rect screenPos)
-    {
-        roomSelection = -1;
-
-        GUILayout.BeginArea(screenPos);
-        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
-        GUILayout.Label("Rooms");
-        if (smartFox.RoomList.Count >= 1)
-        {
-            roomScrollPosition = GUILayout.BeginScrollView(roomScrollPosition, GUILayout.Width(screenPos.width));
-            roomSelection = GUILayout.SelectionGrid(roomSelection, roomFullStrings, 1);
-
-            if (roomSelection >= 0 && roomNameStrings[roomSelection] != currentActiveRoom.Name)
-            {
-                smartFox.Send(new JoinRoomRequest(roomNameStrings[roomSelection], "", CurrentActiveRoom.Id));
-            }
-            GUILayout.EndScrollView();
-
-        }
-        else
-        {
-            GUILayout.Label("No rooms available to join");
-        }
-        GUILayout.EndArea();
-      
-    }
-
-    private void DrawChatGUI(Rect screenPos)
-    {
-        GUILayout.BeginArea(screenPos);
-
-        GUI.Box(new Rect(0, 0, screenPos.width, screenPos.height), "");
-        GUILayout.BeginVertical();
-        chatScrollPosition = GUILayout.BeginScrollView(chatScrollPosition, false, true, GUILayout.Width(screenPos.width));
-        GUILayout.BeginVertical();
-        foreach (string message in messages)
-        {
-            GUILayout.Label(message);
-        }
-        GUILayout.EndVertical();
-        GUILayout.EndScrollView();
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Send", GUILayout.MinWidth(50), GUILayout.MaxWidth(100)) || (Event.current.type == EventType.keyDown && Event.current.character == '\n'))
-        {
-            smartFox.Send(new PublicMessageRequest(newMessage));
-            newMessage = "";
-        }
-        newMessage = GUILayout.TextField(newMessage, 420);
-
-
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
-	
-	
+		
+		GUILayout.EndHorizontal();
+		GUILayout.EndArea();
+	}
 	
 	
 	private void SetupRoomList () {

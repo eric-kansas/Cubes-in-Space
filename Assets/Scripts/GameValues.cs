@@ -9,5 +9,6 @@ public static class GameValues
 	public static int numCaptured = 0;
 	public static int numStolen = 0;
 	public static int numLocked = 0;
+	public static int myScore = 0;
 }
 

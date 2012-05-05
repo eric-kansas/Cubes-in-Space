@@ -26,7 +26,7 @@ public class Arrow : MonoBehaviour
             int index = -1;
             float closestDist = 100000000000000;
             Vector3 dv = Vector3.zero;
-
+			//Debug.Log(mScript.myRefillingStations.Count + "++++++++++++++++++++++++++++++++++++++++++++++++++");
             for (int i = 0; i < mScript.myRefillingStations.Count; i++)
             {
                 if (mScript.myRefillingStations[i] != null)
@@ -35,6 +35,7 @@ public class Arrow : MonoBehaviour
                     if (tempDist < closestDist && tempDist != 0)
                     {
                         dv = mScript.myRefillingStations[i] - transform.position;
+						closestDist = tempDist;
                         index = i;
                     }
                 }

@@ -22,8 +22,10 @@ public class GameLobby : MonoBehaviour
     private string newMessage = "";
     private ArrayList messages = new ArrayList();
 
-    public GUISkin gSkin;
 	public GUIStyle	gStyleLoading;
+	public GUIStyle titleStyle;
+	public Texture2D backgroundImage;
+	
 
     //keep track of room we're in
     private Room currentActiveRoom;
@@ -91,9 +93,9 @@ public class GameLobby : MonoBehaviour
 
         //Make Contents for the popup gameLength list
         gameLengthList[0] = (new GUIContent("60"));
-        gameLengthList[1] = (new GUIContent("90"));
-        gameLengthList[2] = (new GUIContent("120"));
-        gameLengthList[3] = (new GUIContent("150"));
+        gameLengthList[1] = (new GUIContent("120"));
+        gameLengthList[2] = (new GUIContent("300"));
+        gameLengthList[3] = (new GUIContent("600"));
 
         //Make Contents for the popup number of teams list
         teamNumberList[0] = (new GUIContent("2"));
@@ -382,6 +384,12 @@ public class GameLobby : MonoBehaviour
 				Debug.Log("here in room vars gameinfo");
 				numberOfTeams = room.GetVariable("gameInfo").GetSFSObjectValue().GetInt("numTeams");
 			}
+			if (changedVars.Contains("startCountdown"))
+			{
+				Debug.Log("here in room vars startCountdown");
+				startGameTime = 1.0f;
+			}
+			
         }
  
     }
@@ -438,6 +446,13 @@ public class GameLobby : MonoBehaviour
 
         if (currentActiveRoom != null)
         {
+			//draw the background image
+			GUILayout.BeginArea(new Rect(0, 0, Screen.width, Screen.height));
+			GUILayout.Box(backgroundImage);
+			GUILayout.EndArea();
+			
+			
+			
             // ****** Show full interface only in the Lobby ******* //
             if (!currentActiveRoom.IsGame)
             {
@@ -447,7 +462,7 @@ public class GameLobby : MonoBehaviour
 					//display a message to all users that the game is starting
 					DrawLoadingScreen();
 					
-					if (Time.time > startGameTime)
+					if (Time.time > startGameTime && GameValues.isHost)
 					{
 	                    //let other players know to switch rooms
 	                    Debug.Log("sending request");
@@ -488,27 +503,21 @@ public class GameLobby : MonoBehaviour
     }
 	
 	private void DrawRoomTitle(Rect screenPos)
-	{
-		GUIStyle aStyle = new GUIStyle();
-		aStyle.fontSize = 75;
-		aStyle.alignment = TextAnchor.MiddleCenter;
-		
+	{		
 		string roomName = smartFox.LastJoinedRoom.Name.Trim();
 		roomName = roomName.Substring(0, roomName.IndexOf(" "));
 		roomName += "'s Game Lobby";
 		
-		screenPos.x = (screenPos.width / 2) - ((roomName.Length * 5) / 2);
-		
-        GUILayout.BeginArea(screenPos, aStyle);		
-		GUILayout.Label(roomName);
+        GUILayout.BeginArea(screenPos);		
+		GUILayout.Label(roomName, titleStyle, GUILayout.MaxWidth(screenPos.width), GUILayout.MaxHeight(Screen.height));
 		GUILayout.EndArea();
 	}				
 	private void DrawLoadingScreen()
 	{
-		gStyleLoading.normal.textColor = Color.green;
+		//gStyleLoading.normal.textColor = Color.green;
 		
 		//Tell our users that the game is loading
-		float rWidth = Screen.width*.2f;
+		float rWidth = Screen.width*.5f;
 		float rHeight = 300.0f;
 		float rTop = Screen.height/2;
 		float rLeft = Screen.width/2;
@@ -620,7 +629,7 @@ public class GameLobby : MonoBehaviour
             //start game button event listener
             if (GUILayout.Button("Start Game") && startGameTime <= 0)
             {
-
+							
                 // ****** Create the actual game ******* //
                 String[] nameParts = this.currentActiveRoom.Name.Split('-');
                 String gameName = nameParts[0].Trim() + " - Game";
@@ -663,6 +672,12 @@ public class GameLobby : MonoBehaviour
                 //start timer 
                 startGameTime = Time.time + 5.0f;
                 Debug.Log("Start the countdown");
+				
+				List<RoomVariable> roomVars = new List<RoomVariable>();
+				
+				SFSRoomVariable startCountdown = new SFSRoomVariable("startCountdown", true);
+				roomVars.Add(startCountdown);
+				smartFox.Send(new SetRoomVariablesRequest(roomVars));
             }
         }
         else

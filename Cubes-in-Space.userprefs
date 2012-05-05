@@ -1,17 +1,6 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Map Generation\Side.cs">
-    <Files>
-      <File FileName="H:\College2011_2012\Spring\TRex T-Party (2)\TRex T-Party\TRex T-Party\Assets\Scripts\GuiManager.cs" Line="68" Column="23" />
-      <File FileName="Assets\Scripts\Player\PlayerGUI.cs" Line="231" Column="187" />
-      <File FileName="Assets\Scripts\GameManager.cs" Line="817" Column="126" />
-      <File FileName="Assets\Scripts\GameLobby.cs" Line="580" Column="1" />
-      <File FileName="Assets\Scripts\Map Generation\Side.cs" Line="55" Column="32" />
-      <File FileName="Assets\Scripts\GameValues.cs" Line="11" Column="15" />
-      <File FileName="Assets\Scripts\Map Generation\Cube.cs" Line="154" Column="34" />
-      <File FileName="Assets\Scripts\CISTeam.cs" Line="32" Column="3" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

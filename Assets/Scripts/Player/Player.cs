@@ -219,10 +219,13 @@ public class Player : MonoBehaviour {
 
     public void subtractPaint()
     {
-        paintLeft--;
-        refreshPaintText();
-        if(paintLeft < 4)
-            gManScript.TurnOnArrow();
+		if(paintLeft > 0)
+		{
+        	paintLeft--;
+        	refreshPaintText();
+        	if(paintLeft < 4)
+            	gManScript.TurnOnArrow();
+		}
     }
 
     private void refreshPaintText()

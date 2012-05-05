@@ -8,6 +8,12 @@ public class Cube : MonoBehaviour {
 
     public int id = -1;
 
+    public bool locked = false;
+    private ParticleEmitter emitter;
+    private ParticleRenderer pRenderer;
+    private GameManager manager;
+    private List<Material> partMaterials;
+
     private List<GameObject> sides;
     public List<GameObject> Sides
     {
@@ -16,6 +22,12 @@ public class Cube : MonoBehaviour {
 
 	// Use this for initialization
 	void Awake () {
+        emitter = this.GetComponentInChildren<ParticleEmitter>();
+        emitter.emit = false;
+        pRenderer = this.GetComponentInChildren<ParticleRenderer>();
+        manager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        partMaterials = manager.paintMaterials;
+
         Debug.Log("Building Sides _____________________________");
 		sides = new List<GameObject>();
         Quaternion cubeRot = transform.rotation;
@@ -111,14 +123,14 @@ public class Cube : MonoBehaviour {
         {
             sides[i].GetComponent<Side>().locked = true;
             sides[i].GetComponent<Side>().teamOwnedBy = teamNum;
-            setSideColor(sides[i], sides[i].GetComponent<Side>().Color[teamNum], false);
+            setSideColor(sides[i], sides[i].GetComponent<Side>().Color[teamNum], teamNum, false);
         }
     }
 
 	/// <summary>
 	/// A FUNCTION TO CHANGE THE COLOR OF A SIDE OF A CUBE 
 	/// </summary>
-	public void setSideColor(GameObject sideHit, Color color, bool score = true)
+	public void setSideColor(GameObject sideHit, Color color, int teamOwnedBy, bool score = true)
 	{
 		int index = getSideIndex(sideHit);
 		if (index == -1) { return; } //not a proper side
@@ -158,5 +170,8 @@ public class Cube : MonoBehaviour {
 			sides[i].GetComponent<Side>().locked = true;
 		}
 		
+        locked = true;
+		pRenderer.material = partMaterials[curTeamIndex];
+        emitter.emit = true;
 	}
 }
